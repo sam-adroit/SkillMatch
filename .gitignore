@@ -5,3 +5,4 @@
 /SKillMatchBE/.vs/SkillMatchBE
 /SKillMatchBE/bin/Debug/net10.0
 /SKillMatchBE/obj
+*.dockerignore
