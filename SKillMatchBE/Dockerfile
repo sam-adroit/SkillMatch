@@ -5,6 +5,7 @@ COPY ["SkillMatchBE.csproj", "./"]
 RUN dotnet restore "SkillMatchBE.csproj"
 
 COPY . .
+
 RUN dotnet publish "SkillMatchBE.csproj" \
     --configuration Release \
     --output /app/publish \
@@ -17,6 +18,8 @@ WORKDIR /app
 COPY --from=build /app/publish .
 
 ENV ASPNETCORE_ENVIRONMENT=Production
+ENV ASPNETCORE_HTTP_PORTS=8080
+
 EXPOSE 8080
 
-CMD ["sh", "-c", "dotnet SkillMatchBE.dll --urls http://0.0.0.0:${PORT:-8080}"]
+ENTRYPOINT ["dotnet", "SkillMatchBE.dll"]
