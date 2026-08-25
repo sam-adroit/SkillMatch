@@ -1,3 +1,5 @@
+using Microsoft.AspNetCore.HttpOverrides;
+
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
@@ -8,6 +10,15 @@ var allowedOrigins = builder.Configuration
     .Get<string[]>() ?? [];
 
 builder.Services.AddControllers();
+builder.Services.Configure<ForwardedHeadersOptions>(options =>
+{
+    options.ForwardedHeaders =
+        ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
+
+    // Railway assigns dynamic proxy addresses, so there is no stable proxy IP to list.
+    options.KnownIPNetworks.Clear();
+    options.KnownProxies.Clear();
+});
 builder.Services.AddCors(options =>
 {
     options.AddPolicy(CorsPolicyName, policy =>
@@ -22,6 +33,9 @@ builder.Services.AddCors(options =>
 builder.Services.AddOpenApi();
 
 var app = builder.Build();
+
+// Restore the original public scheme before HTTPS redirection and OpenAPI generation.
+app.UseForwardedHeaders();
 
 // Publish the OpenAPI document and Swagger UI in every environment.
 app.MapOpenApi();
