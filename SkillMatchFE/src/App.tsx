@@ -1,11 +1,53 @@
-import { useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import reactLogo from './assets/react.svg'
 import viteLogo from './assets/vite.svg'
 import heroImg from './assets/hero.png'
 import './App.css'
 
+type WeatherForecast = {
+  date: string
+  temperatureC: number
+  temperatureF: number
+  summary: string
+}
+
+const apiUrl = import.meta.env.VITE_API_URL?.replace(/\/$/, '')
+
 function App() {
   const [count, setCount] = useState(0)
+  const [forecasts, setForecasts] = useState<WeatherForecast[]>([])
+  const [weatherError, setWeatherError] = useState<string | null>(null)
+  const [isLoadingWeather, setIsLoadingWeather] = useState(true)
+
+  const loadWeather = useCallback(async () => {
+    setIsLoadingWeather(true)
+    setWeatherError(null)
+
+    try {
+      if (!apiUrl) {
+        throw new Error('VITE_API_URL is not configured')
+      }
+
+      const response = await fetch(`${apiUrl}/WeatherForecast`)
+
+      if (!response.ok) {
+        throw new Error(`Weather request failed (${response.status})`)
+      }
+
+      const data: WeatherForecast[] = await response.json()
+      setForecasts(data)
+    } catch (error) {
+      setWeatherError(
+        error instanceof Error ? error.message : 'Unable to load the weather',
+      )
+    } finally {
+      setIsLoadingWeather(false)
+    }
+  }, [])
+
+  useEffect(() => {
+    void loadWeather()
+  }, [loadWeather])
 
   return (
     <>
@@ -28,6 +70,44 @@ function App() {
         >
           Count is {count}
         </button>
+      </section>
+
+      <div className="ticks"></div>
+
+      <section id="weather" aria-labelledby="weather-heading">
+        <div className="weather-heading">
+          <div>
+            <h2 id="weather-heading">Weather API test</h2>
+            <p>
+              Calling <code>{apiUrl ?? 'VITE_API_URL'}/WeatherForecast</code>
+            </p>
+          </div>
+          <button type="button" className="counter" onClick={loadWeather}>
+            Refresh
+          </button>
+        </div>
+
+        {isLoadingWeather && <p>Loading weather forecasts…</p>}
+
+        {weatherError && (
+          <p className="weather-error" role="alert">
+            {weatherError}
+          </p>
+        )}
+
+        {!isLoadingWeather && !weatherError && (
+          <div className="weather-grid">
+            {forecasts.map((forecast) => (
+              <article className="weather-card" key={forecast.date}>
+                <time dateTime={forecast.date}>{forecast.date}</time>
+                <strong>{forecast.temperatureC}°C</strong>
+                <span>
+                  {forecast.temperatureF}°F · {forecast.summary}
+                </span>
+              </article>
+            ))}
+          </div>
+        )}
       </section>
 
       <div className="ticks"></div>

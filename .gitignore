@@ -6,3 +6,8 @@
 /SKillMatchBE/bin/Debug/net10.0
 /SKillMatchBE/obj
 *.dockerignore
+
+# Local frontend environment variables
+/SkillMatchFE/.env
+/SkillMatchFE/.env.local
+/SkillMatchFE/.env.*.local
