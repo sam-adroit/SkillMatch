@@ -19,13 +19,15 @@ Run these commands from the repository root:
 
 ```powershell
 docker build -t skillmatch-be .\SkillMatchBE
-docker run --rm --name skillmatch-be -p 5227:8080 skillmatch-be
+Copy-Item .\SkillMatchBE\.env.example .\SkillMatchBE\.env
+# Fill in SkillMatchBE/.env before starting the container.
+docker run --rm --name skillmatch-be --env-file .\SkillMatchBE\.env -p 5227:8080 skillmatch-be
 ```
 
 Run the container in the background:
 
 ```powershell
-docker run -d --rm --name skillmatch-be -p 5227:8080 skillmatch-be
+docker run -d --rm --name skillmatch-be --env-file .\SkillMatchBE\.env -p 5227:8080 skillmatch-be
 ```
 
 View logs or stop the container:
@@ -40,7 +42,7 @@ Rebuild and restart after backend changes:
 ```powershell
 docker stop skillmatch-be
 docker build -t skillmatch-be .\SkillMatchBE
-docker run -d --rm --name skillmatch-be -p 5227:8080 skillmatch-be
+docker run -d --rm --name skillmatch-be --env-file .\SkillMatchBE\.env -p 5227:8080 skillmatch-be
 ```
 
 ## Backend — run without Docker
@@ -57,6 +59,56 @@ Build and audit dependencies:
 dotnet build
 dotnet list package --vulnerable --include-transitive
 ```
+
+### PostgreSQL configuration
+
+The backend uses Entity Framework Core with PostgreSQL. Connection credentials must
+come from local .NET User Secrets or Railway variables and must not be added to
+`appsettings.json`.
+
+Configure local development from the backend directory:
+
+```powershell
+railway connect postgres --tunnel-only --port 61916
+dotnet user-secrets set "ConnectionStrings:DefaultConnection" "Host=127.0.0.1;Port=<PORT>;Database=<DATABASE>;Username=<USER>;Password=<PASSWORD>"
+dotnet user-secrets list
+```
+
+Keep the Railway tunnel command running in a separate terminal while using the local
+database connection.
+
+Remove the local secret when it is no longer needed:
+
+```powershell
+dotnet user-secrets remove "ConnectionStrings:DefaultConnection"
+```
+
+In the Railway backend service, create reference variables pointing to the Postgres
+service rather than copying credential values:
+
+```text
+PGHOST=${{Postgres.PGHOST}}
+PGPORT=${{Postgres.PGPORT}}
+PGDATABASE=${{Postgres.PGDATABASE}}
+PGUSER=${{Postgres.PGUSER}}
+PGPASSWORD=${{Postgres.PGPASSWORD}}
+```
+
+If your Railway database service has a different name, replace `Postgres` with its
+exact service name. Deploy the staged Railway variable changes before redeploying the
+backend.
+
+Verify connectivity after starting the API:
+
+- Local: http://localhost:5227/health/database
+- Production: https://api-production-6f48b.up.railway.app/health/database
+
+The endpoint returns HTTP 200 when PostgreSQL is reachable and HTTP 503 otherwise.
+
+For local Docker, keep the database variables in the ignored `SkillMatchBE/.env`
+file. Use `host.docker.internal`, not `127.0.0.1`, when PostgreSQL or a Railway
+tunnel is running on the Windows host. The container's `127.0.0.1` points back to
+the container itself.
 
 Local API documentation:
 

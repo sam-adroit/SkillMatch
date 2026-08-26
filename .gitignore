@@ -11,3 +11,6 @@
 /SkillMatchFE/.env
 /SkillMatchFE/.env.local
 /SkillMatchFE/.env.*.local
+
+# Local backend/container environment variables
+/SkillMatchBE/.env

@@ -1,4 +1,7 @@
 using Microsoft.AspNetCore.HttpOverrides;
+using Microsoft.EntityFrameworkCore;
+using Npgsql;
+using SkillMatchBE.Data;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -8,8 +11,13 @@ const string CorsPolicyName = "SkillMatchWeb";
 var allowedOrigins = builder.Configuration
     .GetSection("Cors:AllowedOrigins")
     .Get<string[]>() ?? [];
+var databaseConnectionString = GetDatabaseConnectionString(builder.Configuration);
 
 builder.Services.AddControllers();
+builder.Services.AddDbContextPool<SkillMatchDbContext>(options =>
+    options.UseNpgsql(
+        databaseConnectionString,
+        postgres => postgres.EnableRetryOnFailure()));
 builder.Services.Configure<ForwardedHeadersOptions>(options =>
 {
     options.ForwardedHeaders =
@@ -55,3 +63,41 @@ app.UseAuthorization();
 app.MapControllers();
 
 app.Run();
+
+static string GetDatabaseConnectionString(IConfiguration configuration)
+{
+    var connectionString = configuration.GetConnectionString("DefaultConnection");
+
+    if (!string.IsNullOrWhiteSpace(connectionString))
+    {
+        return connectionString;
+    }
+
+    var host = configuration["PGHOST"];
+    var database = configuration["PGDATABASE"];
+    var username = configuration["PGUSER"];
+    var password = configuration["PGPASSWORD"];
+
+    if (string.IsNullOrWhiteSpace(host) ||
+        string.IsNullOrWhiteSpace(database) ||
+        string.IsNullOrWhiteSpace(username) ||
+        string.IsNullOrWhiteSpace(password))
+    {
+        throw new InvalidOperationException(
+            "Database configuration is missing. Configure ConnectionStrings:DefaultConnection " +
+            "or the Railway PGHOST, PGPORT, PGDATABASE, PGUSER, and PGPASSWORD variables.");
+    }
+
+    var connectionStringBuilder = new NpgsqlConnectionStringBuilder
+    {
+        Host = host,
+        Port = int.TryParse(configuration["PGPORT"], out var port) ? port : 5432,
+        Database = database,
+        Username = username,
+        Password = password,
+        ApplicationName = "SkillMatchBE",
+        IncludeErrorDetail = false
+    };
+
+    return connectionStringBuilder.ConnectionString;
+}
