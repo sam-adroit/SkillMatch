@@ -37,19 +37,19 @@ builder.Services.AddCors(options =>
             .AllowAnyMethod();
     });
 });
-// Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
-builder.Services.AddOpenApi();
+builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddSwaggerGen();
 
 var app = builder.Build();
 
 // Restore the original public scheme before HTTPS redirection and OpenAPI generation.
 app.UseForwardedHeaders();
 
-// Publish the OpenAPI document and Swagger UI in every environment.
-app.MapOpenApi();
+// Publish Swagger documentation in every environment.
+app.UseSwagger();
 app.UseSwaggerUI(options =>
 {
-    options.SwaggerEndpoint("/openapi/v1.json", "SkillMatch API v1");
+    options.SwaggerEndpoint("/swagger/v1/swagger.json", "SkillMatch API v1");
     options.RoutePrefix = "swagger";
     options.DocumentTitle = "SkillMatch API Documentation";
 });

@@ -113,12 +113,12 @@ the container itself.
 Local API documentation:
 
 - Swagger UI: http://localhost:5227/swagger
-- OpenAPI JSON: http://localhost:5227/openapi/v1.json
+- Swagger JSON: http://localhost:5227/swagger/v1/swagger.json
 
 Production API documentation:
 
 - Swagger UI: https://api-production-6f48b.up.railway.app/swagger
-- OpenAPI JSON: https://api-production-6f48b.up.railway.app/openapi/v1.json
+- Swagger JSON: https://api-production-6f48b.up.railway.app/swagger/v1/swagger.json
 
 ## Frontend quick start
 
