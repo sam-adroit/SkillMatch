@@ -1,90 +1,133 @@
-# SkillMatch
+# SkillMatch AI
 
-SkillMatch consists of an ASP.NET Core Web API and a React/Vite web application.
+SkillMatch AI is a school-project application for matching students with suitable
+projects and helping instructors form balanced teams. The backend is an ASP.NET Core
+.NET 10 container using Entity Framework Core and PostgreSQL. The frontend uses
+React 19, TypeScript, Vite, and Tailwind CSS.
 
 ## Prerequisites
 
-- .NET 10 SDK
+- Docker Desktop, required for the canonical backend workflow
+- Railway CLI and access to the linked project, for the PostgreSQL tunnel
 - Node.js 22 or later and npm
-- Docker Desktop (optional, for running the backend in a container)
+- .NET 10 SDK, required for tests and optional direct backend development
 
-## Project structure
+## Repository structure
 
-- `SkillMatchBE` — ASP.NET Core Web API
-- `SkillMatchFE` — React, TypeScript, and Vite frontend
+- `SkillMatchBE` — API, database context, Dockerfile, and planned application layers
+- `SkillMatchBE.Tests` — xUnit unit and API integration tests
+- `SkillMatchFE` — React, TypeScript, Vite, and Tailwind CSS frontend
 
-## Backend — Docker quick start
+## Canonical backend workflow — Docker
 
-Run these commands from the repository root:
+The committed `SkillMatchBE/Dockerfile` is the canonical local backend runtime and
+the Railway deployment artifact. Run these commands from the repository root.
 
-```powershell
-docker build -t skillmatch-be .\SkillMatchBE
-Copy-Item .\SkillMatchBE\.env.example .\SkillMatchBE\.env
-# Fill in SkillMatchBE/.env before starting the container.
-docker run --rm --name skillmatch-be --env-file .\SkillMatchBE\.env -p 5227:8080 skillmatch-be
-```
+1. Start the PostgreSQL tunnel in its own terminal:
 
-Run the container in the background:
+   ```powershell
+   railway connect postgres --tunnel-only --port 61916
+   ```
 
-```powershell
-docker run -d --rm --name skillmatch-be --env-file .\SkillMatchBE\.env -p 5227:8080 skillmatch-be
-```
+2. Create the ignored container environment file once:
 
-View logs or stop the container:
+   ```powershell
+   Copy-Item .\SkillMatchBE\.env.example .\SkillMatchBE\.env
+   ```
 
-```powershell
-docker logs -f skillmatch-be
-docker stop skillmatch-be
-```
+   Fill in the tunnel values reported by Railway. Keep `PGHOST` set to
+   `host.docker.internal`, because a container's `127.0.0.1` points to the
+   container itself. Never commit `SkillMatchBE/.env`.
 
-Rebuild and restart after backend changes:
+3. Build and run the backend image:
 
-```powershell
-docker stop skillmatch-be
-docker build -t skillmatch-be .\SkillMatchBE
-docker run -d --rm --name skillmatch-be --env-file .\SkillMatchBE\.env -p 5227:8080 skillmatch-be
-```
+   ```powershell
+   docker build -t skillmatch-be .\SkillMatchBE
+   docker run -d --rm --name skillmatch-be --env-file .\SkillMatchBE\.env -p 5227:8080 skillmatch-be
+   ```
 
-## Backend — run without Docker
+4. Verify the containerized API:
+
+   ```powershell
+   Invoke-WebRequest http://localhost:5227/swagger/v1/swagger.json -UseBasicParsing
+   Invoke-RestMethod http://localhost:5227/health/database
+   ```
+
+   Swagger must return HTTP 200. The health response must contain
+   `status: healthy` and `database: PostgreSQL`.
+
+5. View logs or stop the task-created container:
+
+   ```powershell
+   docker logs skillmatch-be
+   docker stop skillmatch-be
+   ```
+
+The container listens on port 8080 internally and is published at
+<http://localhost:5227>. Local Swagger is at <http://localhost:5227/swagger>.
+
+## Optional backend workflow — direct .NET
+
+Direct `dotnet run` is useful for fast development but does not satisfy backend
+acceptance. Configure the connection string through .NET User Secrets and point it
+at the host tunnel:
 
 ```powershell
 cd .\SkillMatchBE
-dotnet restore
-dotnet run
+dotnet user-secrets set "ConnectionStrings:DefaultConnection" "Host=127.0.0.1;Port=61916;Database=<DATABASE>;Username=<USER>;Password=<PASSWORD>"
+dotnet run --launch-profile http
 ```
 
-Build and audit dependencies:
-
-```powershell
-dotnet build
-dotnet list package --vulnerable --include-transitive
-```
-
-### PostgreSQL configuration
-
-The backend uses Entity Framework Core with PostgreSQL. Connection credentials must
-come from local .NET User Secrets or Railway variables and must not be added to
-`appsettings.json`.
-
-Configure local development from the backend directory:
-
-```powershell
-railway connect postgres --tunnel-only --port 61916
-dotnet user-secrets set "ConnectionStrings:DefaultConnection" "Host=127.0.0.1;Port=<PORT>;Database=<DATABASE>;Username=<USER>;Password=<PASSWORD>"
-dotnet user-secrets list
-```
-
-Keep the Railway tunnel command running in a separate terminal while using the local
-database connection.
-
-Remove the local secret when it is no longer needed:
+Remove the local secret when it is no longer required:
 
 ```powershell
 dotnet user-secrets remove "ConnectionStrings:DefaultConnection"
 ```
 
-In the Railway backend service, create reference variables pointing to the Postgres
-service rather than copying credential values:
+## Frontend workflow
+
+From the repository root, create the local environment file once, install
+dependencies, and start Vite:
+
+```powershell
+Copy-Item .\SkillMatchFE\.env.example .\SkillMatchFE\.env
+npm install --prefix .\SkillMatchFE
+npm run dev --prefix .\SkillMatchFE
+```
+
+The frontend is available at <http://localhost:5173> and calls the backend URL in
+`VITE_API_URL`. Frontend variables are public build configuration and must not
+contain secrets.
+
+## Automated verification
+
+Run these checks from the repository root:
+
+```powershell
+dotnet restore .\SkillMatchBE\SkillMatchBE.sln
+dotnet build .\SkillMatchBE\SkillMatchBE.sln
+dotnet test .\SkillMatchBE\SkillMatchBE.sln
+npm run lint --prefix .\SkillMatchFE
+npm run build --prefix .\SkillMatchFE
+```
+
+The API integration tests use an isolated, non-connecting PostgreSQL connection
+string. A successful host build/test does not replace the Docker verification above.
+
+## API behavior
+
+- Swagger UI: <http://localhost:5227/swagger>
+- Swagger JSON: <http://localhost:5227/swagger/v1/swagger.json>
+- PostgreSQL health: <http://localhost:5227/health/database>
+
+The health endpoint returns HTTP 200 when PostgreSQL is reachable and HTTP 503
+otherwise. Unknown routes and unhandled API errors use Problem Details JSON with a
+trace ID.
+
+## Railway configuration
+
+Railway builds the API from `SkillMatchBE/Dockerfile`. The backend supports the same
+environment-variable shape used by the local container:
 
 ```text
 PGHOST=${{Postgres.PGHOST}}
@@ -94,72 +137,22 @@ PGUSER=${{Postgres.PGUSER}}
 PGPASSWORD=${{Postgres.PGPASSWORD}}
 ```
 
-If your Railway database service has a different name, replace `Postgres` with its
-exact service name. Deploy the staged Railway variable changes before redeploying the
-backend.
+If the database service has a different name, replace `Postgres` with its exact
+Railway service name. Railway supplies its internal PostgreSQL host directly; only
+the local Docker/tunnel workflow substitutes `host.docker.internal`.
 
-Verify connectivity after starting the API:
-
-- Local: http://localhost:5227/health/database
-- Production: https://api-production-6f48b.up.railway.app/health/database
-
-The endpoint returns HTTP 200 when PostgreSQL is reachable and HTTP 503 otherwise.
-
-For local Docker, keep the database variables in the ignored `SkillMatchBE/.env`
-file. Use `host.docker.internal`, not `127.0.0.1`, when PostgreSQL or a Railway
-tunnel is running on the Windows host. The container's `127.0.0.1` points back to
-the container itself.
-
-Local API documentation:
-
-- Swagger UI: http://localhost:5227/swagger
-- Swagger JSON: http://localhost:5227/swagger/v1/swagger.json
-
-Production API documentation:
-
-- Swagger UI: https://api-production-6f48b.up.railway.app/swagger
-- Swagger JSON: https://api-production-6f48b.up.railway.app/swagger/v1/swagger.json
-
-## Frontend quick start
-
-Create the local environment file once, install dependencies, and start Vite:
-
-```powershell
-cd .\SkillMatchFE
-Copy-Item .env.example .env
-npm install
-npm run dev
-```
-
-The local frontend is available at http://localhost:5173.
-
-Other frontend commands:
-
-```powershell
-npm run lint
-npm run build
-npm run preview
-```
-
-## Environment configuration
-
-The frontend reads the API base URL from `VITE_API_URL`.
-
-Local `SkillMatchFE/.env`:
+The frontend remains a direct Railway deployment and uses this public build variable:
 
 ```env
-VITE_API_URL=http://localhost:5227
+VITE_API_URL=https://api-production-84ad.up.railway.app
 ```
 
-Set this variable in the Railway frontend service for production builds:
+Production endpoints:
 
-```env
-VITE_API_URL=https://api-production-6f48b.up.railway.app
-```
+- Web: <https://web-production-ff322.up.railway.app>
+- API: <https://api-production-84ad.up.railway.app>
+- Swagger: <https://api-production-84ad.up.railway.app/swagger>
+- PostgreSQL health: <https://api-production-84ad.up.railway.app/health/database>
 
-Local `.env` files are ignored by Git. Commit updates to `.env.example` when the required variables change, but do not commit secrets or local `.env` files.
-
-## Public applications
-
-- Web: https://web-production-6300f7.up.railway.app
-- API: https://api-production-6f48b.up.railway.app
+No demo seeding or test-only configuration is enabled in this baseline or in the
+production settings.

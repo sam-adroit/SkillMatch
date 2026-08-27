@@ -1,16 +1,35 @@
-﻿################################################################################
-# This .gitignore file was automatically created by Microsoft(R) Visual Studio.
-################################################################################
+# .NET / Visual Studio
+**/bin/
+**/obj/
+.vs/
+**/.vs/
+*.user
+*.suo
 
-/SKillMatchBE/.vs/SkillMatchBE
-/SKillMatchBE/bin/Debug/net10.0
-/SKillMatchBE/obj
-*.dockerignore
+# Frontend dependencies and builds
+**/node_modules/
+**/dist/
+**/dist-ssr/
 
-# Local frontend environment variables
-/SkillMatchFE/.env
-/SkillMatchFE/.env.local
-/SkillMatchFE/.env.*.local
+# Local environment and secret files (examples remain tracked)
+.env
+.env.*
+!.env.example
+!SkillMatchFE/.env.production
 
-# Local backend/container environment variables
-/SkillMatchBE/.env
+# Test and coverage output
+TestResults/
+**/TestResults/
+coverage/
+**/coverage/
+*.trx
+*.coverage
+*.coveragexml
+
+# Local tooling and operating-system files
+.idea/
+.vscode/
+.dotnet-home/
+*.log
+.DS_Store
+Thumbs.db

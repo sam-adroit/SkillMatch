@@ -14,6 +14,13 @@ var allowedOrigins = builder.Configuration
 var databaseConnectionString = GetDatabaseConnectionString(builder.Configuration);
 
 builder.Services.AddControllers();
+builder.Services.AddProblemDetails(options =>
+{
+    options.CustomizeProblemDetails = context =>
+    {
+        context.ProblemDetails.Extensions["traceId"] = context.HttpContext.TraceIdentifier;
+    };
+});
 builder.Services.AddDbContextPool<SkillMatchDbContext>(options =>
     options.UseNpgsql(
         databaseConnectionString,
@@ -41,6 +48,9 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
 var app = builder.Build();
+
+app.UseExceptionHandler();
+app.UseStatusCodePages();
 
 // Restore the original public scheme before HTTPS redirection and OpenAPI generation.
 app.UseForwardedHeaders();
@@ -96,8 +106,11 @@ static string GetDatabaseConnectionString(IConfiguration configuration)
         Username = username,
         Password = password,
         ApplicationName = "SkillMatchBE",
+        GssEncryptionMode = GssEncryptionMode.Disable,
         IncludeErrorDetail = false
     };
 
     return connectionStringBuilder.ConnectionString;
 }
+
+public partial class Program;

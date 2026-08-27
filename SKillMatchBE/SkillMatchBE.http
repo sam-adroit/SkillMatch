@@ -1,6 +1,6 @@
-@SkillMatchBE_HostAddress = http://localhost:5197
+@SkillMatchBE_HostAddress = http://localhost:5227
 
-GET {{SkillMatchBE_HostAddress}}/weatherforecast/
+GET {{SkillMatchBE_HostAddress}}/health/database
 Accept: application/json
 
 ###
