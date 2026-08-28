@@ -40,7 +40,8 @@ the Railway deployment artifact. Run these commands from the repository root.
    `host.docker.internal`, because a container's `127.0.0.1` points to the
    container itself. `Database__ApplyMigrations=true` applies the committed EF Core
    migrations at startup. `DemoSeed__Enabled=true` creates the configured Admin if
-   it does not exist. Never commit `SkillMatchBE/.env`.
+   it does not exist and seeds a small lookup/project catalog for local testing.
+   Keep it `false` in production. Never commit `SkillMatchBE/.env`.
 
 3. Build and run the backend image:
 
@@ -71,7 +72,20 @@ the Railway deployment artifact. Run these commands from the repository root.
    the Admin endpoint must return HTTP 403 for the Student token. Login is
    `POST /api/auth/login` with the same email/password JSON shape.
 
-6. View logs or stop the task-created container:
+6. Authenticate protected endpoints in Swagger:
+
+   1. Open <http://localhost:5227/swagger>.
+   2. Run `POST /api/auth/login` with the seeded Admin email and password from
+      the ignored `SkillMatchBE/.env` file.
+   3. Copy only the `token` field from the successful response.
+   4. Click **Authorize** in Swagger and paste the token exactly as the dialog
+      instructs. Do not add a `Bearer ` prefix when the dialog requests only the token.
+   5. Run a protected endpoint such as `GET /api/skills` and confirm HTTP 200.
+   6. Run an Admin endpoint such as `GET /api/admin/projects` and confirm HTTP 200.
+      Student-only `GET /api/profile` should return HTTP 403 with the Admin token;
+      use a Student login token when testing that endpoint.
+
+7. View logs or stop the task-created container:
 
    ```powershell
    docker logs skillmatch-be
@@ -150,12 +164,30 @@ dotnet ef migrations add <MigrationName> --project .\SkillMatchBE --startup-proj
 - Login: `POST /api/auth/login`
 - Current user: `GET /api/auth/me` (bearer token required)
 - Admin authorization check: `GET /api/admin/auth-check` (Admin bearer token required)
+- Student profile: `GET/PUT /api/profile` (Student bearer token required)
+- Lookup catalogs: `GET /api/skills`, `/api/interests`, and `/api/categories`
+- Published project catalog/detail: `GET /api/projects` and `GET /api/projects/{id}`
+- Admin lookup CRUD: `POST /api/admin/{skills|interests|categories}` plus `PUT/DELETE` with an ID
+- Admin project management: `GET/POST /api/admin/projects`, `PUT/DELETE /api/admin/projects/{id}`, and `PATCH /api/admin/projects/{id}/status`
 
 The health endpoint returns HTTP 200 when PostgreSQL is reachable and HTTP 503
 otherwise. Unknown routes and unhandled API errors use Problem Details JSON with a
 trace ID. Public registration always creates a Student account. Passwords are stored
 with ASP.NET Core Identity-compatible hashing; JWTs expire and carry the server-side
 Student/Admin role used by authorization policies.
+
+Project search is evaluated in PostgreSQL and supports `search`, `skillId`,
+`categoryId`, `difficulty`, `available`, and `teamSize` query parameters. Students
+only receive published projects; unpublished and closed projects return 404 from
+the student detail endpoint. Admin notes are present only in Admin project responses.
+Project titles and lookup names are unique without regard to case. Projects require
+at least one skill and team sizes ordered as minimum ≤ preferred ≤ maximum. Only
+Draft projects can be deleted; publish or close projects through the status endpoint.
+
+The `AddProfilesAndProjects` migration is additive: it creates normalized lookup,
+student-profile, project, and join tables without rewriting existing users. Startup
+migration execution remains suitable for the current single API instance. Run
+migrations as a separate deployment step before scaling the API horizontally.
 
 ## Railway configuration
 

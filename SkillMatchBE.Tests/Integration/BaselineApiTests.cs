@@ -1,5 +1,6 @@
 using System.Net;
 using System.Net.Http.Json;
+using System.Text.Json;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.Logging;
@@ -41,6 +42,17 @@ public sealed class BaselineApiTests : IClassFixture<WebApplicationFactory<Progr
         Assert.NotNull(document);
         Assert.Equal("3.0.4", document.Openapi);
         Assert.Contains("/health/database", document.Paths.Keys);
+        Assert.Contains("/api/profile", document.Paths.Keys);
+        Assert.Contains("/api/projects", document.Paths.Keys);
+        Assert.Contains("/api/admin/projects", document.Paths.Keys);
+        var bearer = Assert.Contains("Bearer", document.Components.SecuritySchemes);
+        Assert.Equal("http", bearer.Type);
+        Assert.Equal("bearer", bearer.Scheme);
+        Assert.Equal("JWT", bearer.BearerFormat);
+        var globalSecurity = Assert.Single(document.Security);
+        Assert.True(globalSecurity.TryGetProperty("Bearer", out var scopes));
+        Assert.Equal(JsonValueKind.Array, scopes.ValueKind);
+        Assert.Empty(scopes.EnumerateArray());
     }
 
     [Fact]
@@ -58,7 +70,17 @@ public sealed class BaselineApiTests : IClassFixture<WebApplicationFactory<Progr
 
     private sealed record SwaggerDocument(
         string Openapi,
-        Dictionary<string, object> Paths);
+        Dictionary<string, object> Paths,
+        SwaggerComponents Components,
+        JsonElement[] Security);
+
+    private sealed record SwaggerComponents(
+        Dictionary<string, SwaggerSecurityScheme> SecuritySchemes);
+
+    private sealed record SwaggerSecurityScheme(
+        string Type,
+        string Scheme,
+        string BearerFormat);
 
     private sealed record ProblemResponse(int Status, string TraceId);
 }

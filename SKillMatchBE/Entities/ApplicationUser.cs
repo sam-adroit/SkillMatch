@@ -15,4 +15,6 @@ public sealed class ApplicationUser
     public bool IsActive { get; set; } = true;
 
     public DateTimeOffset CreatedAt { get; set; }
+
+    public StudentProfile? StudentProfile { get; set; }
 }

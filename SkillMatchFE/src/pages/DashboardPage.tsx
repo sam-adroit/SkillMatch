@@ -1,4 +1,5 @@
 import { useAuth } from '../auth/useAuth'
+import { Link } from 'react-router-dom'
 
 export function DashboardPage() {
   const { user } = useAuth()
@@ -17,6 +18,16 @@ export function DashboardPage() {
           <div className="flex justify-between gap-6 border-t border-white/10 pt-4"><dt className="text-slate-400">Session</dt><dd className="font-semibold text-emerald-300">Verified</dd></div>
         </dl>
       </section>
+      <div className="mt-8 flex flex-wrap gap-3">
+        <Link className="rounded-xl bg-cyan-400 px-5 py-3 font-bold text-slate-950 hover:bg-cyan-300" to="/projects">
+          Browse projects
+        </Link>
+        {user?.role === 'Student' && (
+          <Link className="rounded-xl border border-white/15 px-5 py-3 font-bold hover:bg-white/10" to="/profile">
+            Complete profile
+          </Link>
+        )}
+      </div>
     </main>
   )
 }

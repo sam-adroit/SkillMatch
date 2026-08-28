@@ -86,6 +86,33 @@ public sealed class AuthenticationApiTests : IClassFixture<AuthenticationApiFact
         response.EnsureSuccessStatusCode();
     }
 
+    [Fact]
+    public async Task AnonymousUser_CannotAccessStudentProfile()
+    {
+        using var client = factory.CreateClient();
+        using var response = await client.GetAsync("/api/profile");
+
+        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task AdminToken_CannotAccessStudentProfile()
+    {
+        using var client = CreateAuthenticatedClient(factory.CreateToken(UserRole.Admin, DateTimeOffset.UtcNow));
+        using var response = await client.GetAsync("/api/profile");
+
+        Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task StudentToken_CannotManageProjects()
+    {
+        using var client = CreateAuthenticatedClient(factory.CreateToken(UserRole.Student, DateTimeOffset.UtcNow));
+        using var response = await client.PostAsJsonAsync("/api/admin/projects", new { });
+
+        Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
+    }
+
     private HttpClient CreateAuthenticatedClient(string token)
     {
         var client = factory.CreateClient();

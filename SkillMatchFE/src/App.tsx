@@ -7,6 +7,9 @@ import { DashboardPage } from './pages/DashboardPage'
 import { HomePage } from './pages/HomePage'
 import { LoginPage } from './pages/LoginPage'
 import { NotFoundPage } from './pages/NotFoundPage'
+import { ProfilePage } from './pages/ProfilePage'
+import { ProjectDetailPage } from './pages/ProjectDetailPage'
+import { ProjectsPage } from './pages/ProjectsPage'
 import { RegisterPage } from './pages/RegisterPage'
 
 function App() {
@@ -20,6 +23,11 @@ function App() {
             <Route path="register" element={<RegisterPage />} />
             <Route element={<ProtectedRoute />}>
               <Route path="dashboard" element={<DashboardPage />} />
+              <Route path="projects" element={<ProjectsPage />} />
+              <Route path="projects/:projectId" element={<ProjectDetailPage />} />
+            </Route>
+            <Route element={<ProtectedRoute requiredRole="Student" />}>
+              <Route path="profile" element={<ProfilePage />} />
             </Route>
             <Route element={<ProtectedRoute requiredRole="Admin" />}>
               <Route path="admin" element={<AdminPage />} />
