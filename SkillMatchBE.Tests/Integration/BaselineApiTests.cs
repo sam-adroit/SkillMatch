@@ -20,6 +20,9 @@ public sealed class BaselineApiTests : IClassFixture<WebApplicationFactory<Progr
                 builder.UseSetting(
                     "ConnectionStrings:DefaultConnection",
                     "Host=127.0.0.1;Port=1;Database=skillmatch_test;Username=test;Password=test");
+                builder.UseSetting("Jwt:Issuer", "SkillMatchBE.Tests");
+                builder.UseSetting("Jwt:Audience", "SkillMatchFE.Tests");
+                builder.UseSetting("Jwt:Key", "test-only-signing-key-at-least-32-bytes-long");
             })
             .CreateClient(new WebApplicationFactoryClientOptions
             {
