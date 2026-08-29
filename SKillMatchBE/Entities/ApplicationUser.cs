@@ -21,4 +21,6 @@ public sealed class ApplicationUser
     public ICollection<ProjectApplication> ProjectApplications { get; set; } = [];
 
     public ICollection<TeamMember> TeamMemberships { get; set; } = [];
+
+    public ICollection<RecommendationHistory> RecommendationHistory { get; set; } = [];
 }

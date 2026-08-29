@@ -15,6 +15,7 @@ public sealed class SkillMatchDbContext(DbContextOptions<SkillMatchDbContext> op
     public DbSet<ProjectApplication> ProjectApplications => Set<ProjectApplication>();
     public DbSet<Team> Teams => Set<Team>();
     public DbSet<TeamMember> TeamMembers => Set<TeamMember>();
+    public DbSet<RecommendationHistory> RecommendationHistory => Set<RecommendationHistory>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -115,6 +116,20 @@ public sealed class SkillMatchDbContext(DbContextOptions<SkillMatchDbContext> op
             .HasForeignKey(item => item.TeamId).OnDelete(DeleteBehavior.Cascade);
         teamMember.HasOne(item => item.Student).WithMany(item => item.TeamMemberships)
             .HasForeignKey(item => item.StudentId).OnDelete(DeleteBehavior.Restrict);
+
+        var recommendation = modelBuilder.Entity<RecommendationHistory>();
+        recommendation.ToTable("RecommendationHistory");
+        recommendation.HasKey(item => item.Id);
+        recommendation.Property(item => item.Type).HasConversion<string>().HasMaxLength(20);
+        recommendation.Property(item => item.Score).HasPrecision(5, 2);
+        recommendation.Property(item => item.Explanation).HasMaxLength(1000).IsRequired();
+        recommendation.Property(item => item.Provider).HasMaxLength(50).IsRequired();
+        recommendation.Property(item => item.Model).HasMaxLength(100).IsRequired();
+        recommendation.Property(item => item.ProviderStatus).HasConversion<string>().HasMaxLength(20);
+        recommendation.HasIndex(item => new { item.StudentId, item.Type, item.CreatedAt });
+        recommendation.HasIndex(item => new { item.Type, item.TargetId });
+        recommendation.HasOne(item => item.Student).WithMany(item => item.RecommendationHistory)
+            .HasForeignKey(item => item.StudentId).OnDelete(DeleteBehavior.Cascade);
     }
 
     private static void ConfigureLookup<T>(Microsoft.EntityFrameworkCore.Metadata.Builders.EntityTypeBuilder<T> lookup, string table)

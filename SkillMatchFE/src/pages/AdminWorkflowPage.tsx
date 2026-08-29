@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState, type FormEvent } from 'react'
 import { ApiError } from '../auth/api'
-import type { AdminDashboard, AdminProject, ProjectApplication, Team } from '../auth/types'
+import type { AdminDashboard, AdminProject, ProjectApplication, Team, TeamSkillGap } from '../auth/types'
 import { useAuth } from '../auth/useAuth'
 
 const inputClass = 'min-h-12 w-full rounded-xl border border-white/15 bg-slate-950 px-4 py-3 text-white'
@@ -13,6 +13,7 @@ export function AdminWorkflowPage() {
   const [approvedApplications, setApprovedApplications] = useState<ProjectApplication[]>([])
   const [projects, setProjects] = useState<AdminProject[]>([])
   const [teams, setTeams] = useState<Team[]>([])
+  const [skillGaps, setSkillGaps] = useState<Record<string, TeamSkillGap>>({})
   const [statusFilter, setStatusFilter] = useState('')
   const [projectFilter, setProjectFilter] = useState('')
   const [teamProjectId, setTeamProjectId] = useState('')
@@ -38,6 +39,8 @@ export function AdminWorkflowPage() {
         authenticatedRequest<ProjectApplication[]>('/api/admin/applications?status=Approved'),
       ])
       setDashboard(counts); setProjects(loadedProjects); setTeams(loadedTeams); setApprovedApplications(loadedApproved)
+      const gaps = await Promise.all(loadedTeams.map((team) => authenticatedRequest<TeamSkillGap>(`/api/teams/${team.id}/skill-gaps`)))
+      setSkillGaps(Object.fromEntries(gaps.map((gap) => [gap.teamId, gap])))
       setTeamProjectId((current) => current || loadedProjects.find((item) => item.status === 'Published')?.id || '')
       await loadApplications()
     } catch { setError('Unable to load applications, teams, and dashboard counts.') }
@@ -106,6 +109,6 @@ export function AdminWorkflowPage() {
       <button className="min-h-12 rounded-xl bg-violet-400 px-5 font-bold text-slate-950" type="submit">{selectedTeam ? 'Update team' : 'Create team'}</button>
     </form></section>
 
-    <section className="mt-10"><h2 className="text-2xl font-black">Active teams</h2>{teams.length === 0 ? <p className="mt-4 rounded-xl border border-white/10 p-5 text-slate-300">No active teams yet.</p> : <div className="mt-4 grid gap-4 lg:grid-cols-2">{teams.map((team) => <article className="rounded-2xl border border-white/10 bg-white/[0.05] p-5" key={team.id}><p className="text-sm font-bold uppercase tracking-wider text-emerald-300">{team.projectTitle}</p><h3 className="mt-2 text-xl font-black">{team.name}</h3><p className="mt-2 text-slate-400">{team.members.length} / {team.maximumSize}</p><ul className="mt-3 grid gap-2">{team.members.map((member) => <li className="rounded-lg bg-slate-950 p-3" key={member.studentId}>{member.email}{member.isLeader && <strong className="ml-2 text-cyan-300">Leader</strong>}</li>)}</ul><button className="mt-4 min-h-11 rounded-lg border border-white/20 px-4" onClick={() => setTeamProjectId(team.projectId)}>Manage team</button></article>)}</div>}</section>
+    <section className="mt-10"><h2 className="text-2xl font-black">Active teams</h2>{teams.length === 0 ? <p className="mt-4 rounded-xl border border-white/10 p-5 text-slate-300">No active teams yet.</p> : <div className="mt-4 grid gap-4 lg:grid-cols-2">{teams.map((team) => { const gap = skillGaps[team.id]; return <article className="rounded-2xl border border-white/10 bg-white/[0.05] p-5" key={team.id}><p className="text-sm font-bold uppercase tracking-wider text-emerald-300">{team.projectTitle}</p><h3 className="mt-2 text-xl font-black">{team.name}</h3><p className="mt-2 text-slate-400">{team.members.length} / {team.maximumSize}</p><ul className="mt-3 grid gap-2">{team.members.map((member) => <li className="rounded-lg bg-slate-950 p-3" key={member.studentId}>{member.email}{member.isLeader && <strong className="ml-2 text-cyan-300">Leader</strong>}</li>)}</ul>{gap && <div className="mt-4 rounded-xl bg-slate-950 p-4"><h4 className="font-black">Required-skill coverage</h4><p className="mt-2 text-sm text-slate-300">Covered: {gap.coveredSkills.join(', ') || 'None yet'}</p><p className={`mt-2 text-sm font-bold ${gap.missingSkills.length ? 'text-amber-200' : 'text-emerald-200'}`}>{gap.missingSkills.length ? `Missing: ${gap.missingSkills.join(', ')}` : 'No required skill gaps.'}</p></div>}<button className="mt-4 min-h-11 rounded-lg border border-white/20 px-4" onClick={() => setTeamProjectId(team.projectId)}>Manage team</button></article> })}</div>}</section>
   </main>
 }

@@ -43,7 +43,10 @@ the Railway deployment artifact. Run these commands from the repository root.
    it does not exist and seeds a small lookup/project catalog plus two complete
    Student profiles (`demo-student1@skillmatch.local` and
    `demo-student2@skillmatch.local`). The demo Students use the same externally
-   configured demo password; no password is hard-coded.
+   configured demo password; no password is hard-coded. Add the backend-only
+   `OPENAI_API_KEY`, `OPENAI_MODEL=gpt-5-mini`, and optional
+   `OPENAI_TIMEOUT_SECONDS=15` values for live recommendation explanations.
+   These values are passed only at container runtime—not as Docker build arguments.
    Keep it `false` in production. Never commit `SkillMatchBE/.env`.
 
 3. Build and run the backend image:
@@ -111,6 +114,8 @@ dotnet user-secrets set "Jwt:Issuer" "SkillMatchBE"
 dotnet user-secrets set "Jwt:Audience" "SkillMatchFE"
 dotnet user-secrets set "Jwt:Key" "<GENERATE-A-RANDOM-SECRET-OF-AT-LEAST-32-BYTES>"
 dotnet user-secrets set "Database:ApplyMigrations" "true"
+dotnet user-secrets set "OPENAI_API_KEY" "<OPENAI-PROJECT-KEY>"
+dotnet user-secrets set "OPENAI_MODEL" "gpt-5-mini"
 dotnet run --launch-profile http
 ```
 
@@ -119,6 +124,7 @@ Remove the local secret when it is no longer required:
 ```powershell
 dotnet user-secrets remove "ConnectionStrings:DefaultConnection"
 dotnet user-secrets remove "Jwt:Key"
+dotnet user-secrets remove "OPENAI_API_KEY"
 ```
 
 ## Frontend workflow
@@ -146,6 +152,16 @@ dotnet build .\SkillMatchBE\SkillMatchBE.sln
 dotnet test .\SkillMatchBE\SkillMatchBE.sln
 npm run lint --prefix .\SkillMatchFE
 npm run build --prefix .\SkillMatchFE
+```
+
+Normal tests mock the recommendation provider and spend no API credits. Run the
+explicit live Responses API smoke test only when intended; it loads the key from
+the backend's existing user-secrets without printing it:
+
+```powershell
+$env:RUN_OPENAI_SMOKE_TEST = "1"
+dotnet test .\SkillMatchBE\SkillMatchBE.sln --filter "Category=OpenAISmoke"
+Remove-Item Env:RUN_OPENAI_SMOKE_TEST
 ```
 
 The API integration tests use an isolated, non-connecting PostgreSQL connection
@@ -177,6 +193,10 @@ dotnet ef migrations add <MigrationName> --project .\SkillMatchBE --startup-proj
 - Team views: `GET /api/teams` and `GET /api/teams/{id}`; Students receive only their active teams
 - Admin team management: `POST /api/admin/teams` and `PUT /api/admin/teams/{id}`
 - Admin counts: `GET /api/admin/dashboard`
+- Ranked project recommendations: `POST /api/recommendations/projects` (Student)
+- Recommendation history: `GET /api/recommendations/history` (Student)
+- Available teammate suggestions: `GET /api/recommendations/teammates` (Student)
+- Team skill gaps: `GET /api/teams/{id}/skill-gaps` (Admin or that team's Student members)
 
 The health endpoint returns HTTP 200 when PostgreSQL is reachable and HTTP 503
 otherwise. Unknown routes and unhandled API errors use Problem Details JSON with a
@@ -204,6 +224,47 @@ Application decisions and membership changes run in serializable PostgreSQL
 transactions. A Student needs a saved profile to apply; projects must be Published;
 duplicate applications, approvals beyond project capacity, unapproved team members,
 and a second active team assignment in the implicit course cycle are rejected.
+
+The additive `AddRecommendations` migration stores project recommendation score,
+explanation, provider, model, AI/fallback status, and timestamp history. Project
+ranking uses a documented 100-point deterministic score: required-skill overlap
+50, interest/category alignment 20, preferred-technology alignment 15, and
+difficulty/experience fit 15. Ties are stable by project title and ID. Up to three
+published projects are sent in one compact OpenAI Responses API request for short
+structured explanations. The payload excludes identity, email, goals, passwords,
+application notes, and other private data. Current results are reused only until
+the Student profile, ranked project data, or target set changes.
+
+If OpenAI configuration is missing, the request times out, or the provider returns
+an error or malformed response, the API stores and returns a deterministic
+`Fallback` explanation. The UI labels fallback mode clearly, while profile,
+project, application, and team workflows continue normally. A fallback result is
+not evidence for Plan 005 acceptance; the deployed UI must show `AI generated`.
+
+Teammate suggestions exclude the requesting Student, inactive accounts, Students
+without profiles, and anyone assigned to an active team. Responses expose only an
+opaque Student label and shared/complementary skill and interest facts—never email,
+goals, credentials, or application notes. Team skill gaps are the project-required
+skills minus the union of current member skills.
+
+## Recommendation demo flow
+
+1. As a demo Student with a complete profile, open **Recommendations** and choose
+   **Generate recommendations**.
+2. Confirm ranked score, matched skills, growth areas, and an **AI generated** badge;
+   refresh/generate again to see the unchanged batch reused in history.
+3. Edit a profile skill or preferred technology, save, and generate again. Confirm
+   a new stored batch and sensible ranking or explanation changes.
+4. Review available teammate suggestions; confirm no email or private profile text
+   is displayed and assigned Students are absent.
+5. Open **My work** as a team member or the Admin workflow page to review required
+   skill coverage. Add an approved member with a missing skill and confirm the gap
+   disappears after the team refreshes.
+
+For a safe fallback check, omit or replace `OPENAI_API_KEY` only in a disposable
+local container, generate recommendations, and confirm the visible fallback notice.
+Restore the real key before live-AI acceptance. Never alter the production key to
+test an outage.
 
 ## Application and team demo flow
 
@@ -234,6 +295,9 @@ Jwt__Audience=SkillMatchFE
 Jwt__Key=<RAILWAY-GENERATED-SECRET-OF-AT-LEAST-32-BYTES>
 Jwt__ExpiresMinutes=60
 DemoSeed__Enabled=false
+OPENAI_API_KEY=<RAILWAY-BACKEND-ONLY-PROJECT-KEY>
+OPENAI_MODEL=gpt-5-mini
+OPENAI_TIMEOUT_SECONDS=15
 ```
 
 If the database service has a different name, replace `Postgres` with its exact
@@ -250,6 +314,9 @@ To expose a safe demo Admin, set `DemoSeed__Enabled=true` plus
 `DemoSeed__AdminEmail` and `DemoSeed__AdminPassword` as Railway variables. Keep the
 password only in Railway/runtime configuration, use at least 12 characters, and
 disable the seed outside the demo environment. No credential is committed.
+Set OpenAI variables only on Railway's backend `API` service; never add them to the
+frontend or use a `VITE_` prefix. The backend calls
+<https://api.openai.com/v1/responses>; the browser calls only the SkillMatch API.
 
 Production endpoints:
 

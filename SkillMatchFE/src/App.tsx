@@ -13,6 +13,7 @@ import { ProjectsPage } from './pages/ProjectsPage'
 import { RegisterPage } from './pages/RegisterPage'
 import { MyWorkPage } from './pages/MyWorkPage'
 import { AdminWorkflowPage } from './pages/AdminWorkflowPage'
+import { RecommendationsPage } from './pages/RecommendationsPage'
 
 function App() {
   return (
@@ -31,6 +32,7 @@ function App() {
             <Route element={<ProtectedRoute requiredRole="Student" />}>
               <Route path="profile" element={<ProfilePage />} />
               <Route path="my-work" element={<MyWorkPage />} />
+              <Route path="recommendations" element={<RecommendationsPage />} />
             </Route>
             <Route element={<ProtectedRoute requiredRole="Admin" />}>
               <Route path="admin" element={<AdminPage />} />

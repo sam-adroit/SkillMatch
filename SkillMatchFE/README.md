@@ -20,7 +20,10 @@ npm run build --prefix SkillMatchFE
 ```
 
 Student routes include the profile, published-project catalog/detail, project
-application form, and **My work** application/team status view. Admins use the
+application form, **Recommendations** ranked-project/history/teammate workspace,
+and **My work** application/team status plus skill-gap view. Admins use the
 catalog/project workspace plus the responsive applications, team editor, and count
-dashboard at `/admin/workflows`. The API enforces every role and workflow rule; UI
+dashboard with team skill coverage at `/admin/workflows`. Recommendation cards
+label live `AI generated` and deterministic `Fallback` results distinctly. The
+browser never receives an OpenAI key. The API enforces every role and workflow rule; UI
 visibility is not treated as authorization.

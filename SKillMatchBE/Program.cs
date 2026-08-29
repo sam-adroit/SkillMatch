@@ -12,6 +12,7 @@ using SkillMatchBE.Auth;
 using SkillMatchBE.Data;
 using SkillMatchBE.Entities;
 using SkillMatchBE.Repositories;
+using SkillMatchBE.Recommendations;
 using SkillMatchBE.Services;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -57,6 +58,15 @@ builder.Services
 builder.Services.Configure<DatabaseOptions>(
     builder.Configuration.GetSection(DatabaseOptions.SectionName));
 builder.Services
+    .AddOptions<OpenAIOptions>()
+    .Configure(options =>
+    {
+        options.ApiKey = builder.Configuration["OPENAI_API_KEY"] ?? builder.Configuration["OpenAI:ApiKey"] ?? string.Empty;
+        options.Model = builder.Configuration["OPENAI_MODEL"] ?? builder.Configuration["OpenAI:Model"] ?? "gpt-5-mini";
+        options.TimeoutSeconds = int.TryParse(builder.Configuration["OPENAI_TIMEOUT_SECONDS"], out var timeout) ? timeout : 15;
+    })
+    .ValidateDataAnnotations();
+builder.Services
     .AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer();
 builder.Services
@@ -85,11 +95,17 @@ builder.Services.AddScoped<IProfileRepository, ProfileRepository>();
 builder.Services.AddScoped<ILookupRepository, LookupRepository>();
 builder.Services.AddScoped<IProjectRepository, ProjectRepository>();
 builder.Services.AddScoped<IApplicationTeamRepository, ApplicationTeamRepository>();
+builder.Services.AddScoped<IRecommendationRepository, RecommendationRepository>();
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IProfileService, ProfileService>();
 builder.Services.AddScoped<ILookupService, LookupService>();
 builder.Services.AddScoped<IProjectService, ProjectService>();
 builder.Services.AddScoped<IWorkflowService, WorkflowService>();
+builder.Services.AddScoped<IRecommendationService, RecommendationService>();
+builder.Services.AddHttpClient<IRecommendationProvider, OpenAIRecommendationProvider>(client =>
+{
+    client.BaseAddress = new Uri("https://api.openai.com/v1/");
+});
 builder.Services.AddScoped<IJwtTokenService, JwtTokenService>();
 builder.Services.AddScoped<IPasswordHasher<ApplicationUser>, PasswordHasher<ApplicationUser>>();
 builder.Services.AddScoped<IDemoDataSeeder, DemoDataSeeder>();

@@ -8,6 +8,7 @@ using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Options;
 using SkillMatchBE.Auth;
 using SkillMatchBE.DTOs.Auth;
+using SkillMatchBE.DTOs.Recommendations;
 using SkillMatchBE.Entities;
 using SkillMatchBE.Services;
 using Xunit;
@@ -146,6 +147,35 @@ public sealed class AuthenticationApiTests : IClassFixture<AuthenticationApiFact
         Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
     }
 
+    [Fact]
+    public async Task AnonymousUser_CannotRequestRecommendations()
+    {
+        using var client = factory.CreateClient();
+        using var response = await client.PostAsync("/api/recommendations/projects", null);
+
+        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task AdminToken_CannotRequestStudentRecommendations()
+    {
+        using var client = CreateAuthenticatedClient(factory.CreateToken(UserRole.Admin, DateTimeOffset.UtcNow));
+        using var response = await client.PostAsync("/api/recommendations/projects", null);
+
+        Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task StudentToken_CanRequestRecommendationsAndTeammates()
+    {
+        using var client = CreateAuthenticatedClient(factory.CreateToken(UserRole.Student, DateTimeOffset.UtcNow));
+        using var projects = await client.PostAsync("/api/recommendations/projects", null);
+        using var teammates = await client.GetAsync("/api/recommendations/teammates");
+
+        projects.EnsureSuccessStatusCode();
+        teammates.EnsureSuccessStatusCode();
+    }
+
     private HttpClient CreateAuthenticatedClient(string token)
     {
         var client = factory.CreateClient();
@@ -171,6 +201,8 @@ public sealed class AuthenticationApiFactory : WebApplicationFactory<Program>
         {
             services.RemoveAll<IAuthService>();
             services.AddSingleton<IAuthService>(new StubAuthService(UserId));
+            services.RemoveAll<IRecommendationService>();
+            services.AddSingleton<IRecommendationService>(new StubRecommendationService());
         });
     }
 
@@ -216,5 +248,17 @@ public sealed class AuthenticationApiFactory : WebApplicationFactory<Program>
     private sealed class TestClock(DateTimeOffset value) : IClock
     {
         public DateTimeOffset UtcNow => value;
+    }
+
+    private sealed class StubRecommendationService : IRecommendationService
+    {
+        public Task<RecommendationResult<RecommendationBatchResponse>> RecommendProjectsAsync(Guid id, CancellationToken token) =>
+            Task.FromResult(RecommendationResult<RecommendationBatchResponse>.Success(new([], false, "NoResults")));
+        public Task<RecommendationResult<IReadOnlyList<RecommendationHistoryResponse>>> GetHistoryAsync(Guid id, CancellationToken token) =>
+            Task.FromResult(RecommendationResult<IReadOnlyList<RecommendationHistoryResponse>>.Success([]));
+        public Task<RecommendationResult<IReadOnlyList<TeammateSuggestionResponse>>> SuggestTeammatesAsync(Guid id, CancellationToken token) =>
+            Task.FromResult(RecommendationResult<IReadOnlyList<TeammateSuggestionResponse>>.Success([]));
+        public Task<RecommendationResult<TeamSkillGapResponse>> GetTeamSkillGapsAsync(Guid teamId, Guid userId, bool isAdmin, CancellationToken token) =>
+            Task.FromResult(RecommendationResult<TeamSkillGapResponse>.Fail(RecommendationFailure.NotFound, "Not found"));
     }
 }
