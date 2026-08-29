@@ -17,4 +17,8 @@ public sealed class ApplicationUser
     public DateTimeOffset CreatedAt { get; set; }
 
     public StudentProfile? StudentProfile { get; set; }
+
+    public ICollection<ProjectApplication> ProjectApplications { get; set; } = [];
+
+    public ICollection<TeamMember> TeamMemberships { get; set; } = [];
 }

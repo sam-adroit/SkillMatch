@@ -12,6 +12,9 @@ public sealed class SkillMatchDbContext(DbContextOptions<SkillMatchDbContext> op
     public DbSet<Interest> Interests => Set<Interest>();
     public DbSet<Category> Categories => Set<Category>();
     public DbSet<ProjectTopic> Projects => Set<ProjectTopic>();
+    public DbSet<ProjectApplication> ProjectApplications => Set<ProjectApplication>();
+    public DbSet<Team> Teams => Set<Team>();
+    public DbSet<TeamMember> TeamMembers => Set<TeamMember>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -77,6 +80,41 @@ public sealed class SkillMatchDbContext(DbContextOptions<SkillMatchDbContext> op
             .HasForeignKey(item => item.ProjectId);
         requiredSkill.HasOne(item => item.Skill).WithMany().HasForeignKey(item => item.SkillId)
             .OnDelete(DeleteBehavior.Restrict);
+
+        var application = modelBuilder.Entity<ProjectApplication>();
+        application.ToTable("ProjectApplications");
+        application.HasKey(item => item.Id);
+        application.Property(item => item.Note).HasMaxLength(1000);
+        application.Property(item => item.DecisionNote).HasMaxLength(1000);
+        application.Property(item => item.Status).HasConversion<string>().HasMaxLength(20);
+        application.HasIndex(item => new { item.StudentId, item.ProjectId }).IsUnique();
+        application.HasIndex(item => new { item.ProjectId, item.Status });
+        application.HasIndex(item => new { item.StudentId, item.Status });
+        application.HasOne(item => item.Student).WithMany(item => item.ProjectApplications)
+            .HasForeignKey(item => item.StudentId).OnDelete(DeleteBehavior.Restrict);
+        application.HasOne(item => item.Project).WithMany(item => item.Applications)
+            .HasForeignKey(item => item.ProjectId).OnDelete(DeleteBehavior.Restrict);
+
+        var team = modelBuilder.Entity<Team>();
+        team.ToTable("Teams");
+        team.HasKey(item => item.Id);
+        team.Property(item => item.Name).HasMaxLength(120).IsRequired();
+        team.Property(item => item.Status).HasConversion<string>().HasMaxLength(20);
+        team.HasIndex(item => item.ProjectId).IsUnique();
+        team.HasIndex(item => item.Status);
+        team.HasOne(item => item.Project).WithOne(item => item.Team)
+            .HasForeignKey<Team>(item => item.ProjectId).OnDelete(DeleteBehavior.Restrict);
+        team.HasOne(item => item.LeaderStudent).WithMany()
+            .HasForeignKey(item => item.LeaderStudentId).OnDelete(DeleteBehavior.Restrict);
+
+        var teamMember = modelBuilder.Entity<TeamMember>();
+        teamMember.ToTable("TeamMembers");
+        teamMember.HasKey(item => new { item.TeamId, item.StudentId });
+        teamMember.HasIndex(item => item.StudentId);
+        teamMember.HasOne(item => item.Team).WithMany(item => item.Members)
+            .HasForeignKey(item => item.TeamId).OnDelete(DeleteBehavior.Cascade);
+        teamMember.HasOne(item => item.Student).WithMany(item => item.TeamMemberships)
+            .HasForeignKey(item => item.StudentId).OnDelete(DeleteBehavior.Restrict);
     }
 
     private static void ConfigureLookup<T>(Microsoft.EntityFrameworkCore.Metadata.Builders.EntityTypeBuilder<T> lookup, string table)

@@ -113,6 +113,39 @@ public sealed class AuthenticationApiTests : IClassFixture<AuthenticationApiFact
         Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
     }
 
+    [Fact]
+    public async Task AnonymousUser_CannotViewApplications()
+    {
+        using var client = factory.CreateClient();
+        using var response = await client.GetAsync("/api/applications");
+
+        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+    }
+
+    [Theory]
+    [InlineData("/api/admin/applications/967f841d-933d-4e62-b2fc-2f4218e7464e/decision", "PATCH")]
+    [InlineData("/api/admin/teams", "POST")]
+    public async Task StudentToken_CannotManageApplicationOrTeamWorkflows(string path, string method)
+    {
+        using var client = CreateAuthenticatedClient(factory.CreateToken(UserRole.Student, DateTimeOffset.UtcNow));
+        using var request = new HttpRequestMessage(new HttpMethod(method), path)
+        {
+            Content = JsonContent.Create(new { })
+        };
+        using var response = await client.SendAsync(request);
+
+        Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task StudentToken_CannotViewAdminDashboard()
+    {
+        using var client = CreateAuthenticatedClient(factory.CreateToken(UserRole.Student, DateTimeOffset.UtcNow));
+        using var response = await client.GetAsync("/api/admin/dashboard");
+
+        Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
+    }
+
     private HttpClient CreateAuthenticatedClient(string token)
     {
         var client = factory.CreateClient();

@@ -48,3 +48,38 @@ export type Project = {
 }
 
 export type AdminProject = Project & { adminNotes: string }
+
+export type ProjectApplication = {
+  id: string
+  studentId: string
+  studentEmail: string
+  projectId: string
+  projectTitle: string
+  note: string
+  status: 'Pending' | 'Approved' | 'Rejected' | 'Waitlisted'
+  appliedAt: string
+  decidedAt: string | null
+  decisionNote: string
+}
+
+export type TeamMember = { studentId: string; email: string; isLeader: boolean; joinedAt: string }
+
+export type Team = {
+  id: string
+  projectId: string
+  projectTitle: string
+  name: string
+  status: string
+  maximumSize: number
+  members: TeamMember[]
+  createdAt: string
+  updatedAt: string
+}
+
+export type AdminDashboard = {
+  students: number
+  projects: number
+  teams: number
+  pendingApplications: number
+  unassignedStudents: number
+}

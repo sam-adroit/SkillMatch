@@ -45,6 +45,9 @@ public sealed class BaselineApiTests : IClassFixture<WebApplicationFactory<Progr
         Assert.Contains("/api/profile", document.Paths.Keys);
         Assert.Contains("/api/projects", document.Paths.Keys);
         Assert.Contains("/api/admin/projects", document.Paths.Keys);
+        Assert.Contains("/api/applications", document.Paths.Keys);
+        Assert.Contains("/api/teams", document.Paths.Keys);
+        Assert.Contains("/api/admin/dashboard", document.Paths.Keys);
         var bearer = Assert.Contains("Bearer", document.Components.SecuritySchemes);
         Assert.Equal("http", bearer.Type);
         Assert.Equal("bearer", bearer.Scheme);

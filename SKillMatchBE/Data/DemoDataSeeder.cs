@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using SkillMatchBE.Entities;
 using SkillMatchBE.Repositories;
@@ -34,26 +35,27 @@ public sealed class DemoDataSeeder(
                     "The configured demo Admin email belongs to a non-Admin account.");
             }
 
-            await SeedCatalogAsync(cancellationToken);
-            return;
         }
-
-        var admin = new ApplicationUser
+        else
         {
-            Email = email,
-            NormalizedEmail = normalizedEmail,
-            PasswordHash = string.Empty,
-            Role = UserRole.Admin,
-            CreatedAt = clock.UtcNow
-        };
-        admin.PasswordHash = passwordHasher.HashPassword(admin, seed.AdminPassword);
+            var admin = new ApplicationUser
+            {
+                Email = email,
+                NormalizedEmail = normalizedEmail,
+                PasswordHash = string.Empty,
+                Role = UserRole.Admin,
+                CreatedAt = clock.UtcNow
+            };
+            admin.PasswordHash = passwordHasher.HashPassword(admin, seed.AdminPassword);
 
-        if (!await users.TryAddAsync(admin, cancellationToken))
-        {
-            throw new InvalidOperationException("Unable to create the configured demo Admin.");
+            if (!await users.TryAddAsync(admin, cancellationToken))
+            {
+                throw new InvalidOperationException("Unable to create the configured demo Admin.");
+            }
         }
 
         await SeedCatalogAsync(cancellationToken);
+        await SeedStudentsAsync(cancellationToken);
     }
 
     private async Task SeedCatalogAsync(CancellationToken cancellationToken)
@@ -104,4 +106,48 @@ public sealed class DemoDataSeeder(
     private static Skill LookupSkill(string name) => new() { Name = name, NormalizedName = name.ToUpperInvariant() };
     private static Interest LookupInterest(string name) => new() { Name = name, NormalizedName = name.ToUpperInvariant() };
     private static Category LookupCategory(string name) => new() { Name = name, NormalizedName = name.ToUpperInvariant() };
+
+    private async Task SeedStudentsAsync(CancellationToken cancellationToken)
+    {
+        var skills = database.Skills.OrderBy(item => item.Name).Take(2).ToArray();
+        var interests = database.Interests.OrderBy(item => item.Name).Take(2).ToArray();
+        foreach (var email in new[] { "demo-student1@skillmatch.local", "demo-student2@skillmatch.local" })
+        {
+            var normalized = AuthService.NormalizeEmail(email);
+            var student = await users.FindByNormalizedEmailAsync(normalized, cancellationToken);
+            if (student is null)
+            {
+                student = new ApplicationUser
+                {
+                    Email = email,
+                    NormalizedEmail = normalized,
+                    PasswordHash = string.Empty,
+                    Role = UserRole.Student,
+                    CreatedAt = clock.UtcNow
+                };
+                student.PasswordHash = passwordHasher.HashPassword(student, seed.AdminPassword);
+                if (!await users.TryAddAsync(student, cancellationToken))
+                    throw new InvalidOperationException($"Unable to create demo Student {email}.");
+            }
+            if (student.Role != UserRole.Student)
+                throw new InvalidOperationException($"The demo Student email {email} belongs to a non-Student account.");
+            if (await database.StudentProfiles.AnyAsync(item => item.UserId == student.Id, cancellationToken))
+                continue;
+
+            var profile = new StudentProfile
+            {
+                UserId = student.Id,
+                Goals = "Contribute to a collaborative full-stack course project.",
+                ExperienceLevel = ExperienceLevel.Intermediate,
+                PreferredTechnologies = ["React", "PostgreSQL"],
+                UpdatedAt = clock.UtcNow
+            };
+            foreach (var skill in skills)
+                profile.Skills.Add(new StudentProfileSkill { ProfileUserId = student.Id, SkillId = skill.Id });
+            foreach (var interest in interests)
+                profile.Interests.Add(new StudentProfileInterest { ProfileUserId = student.Id, InterestId = interest.Id });
+            database.StudentProfiles.Add(profile);
+            await database.SaveChangesAsync(cancellationToken);
+        }
+    }
 }

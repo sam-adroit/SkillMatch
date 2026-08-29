@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState, type FormEvent } from 'react'
 import { ApiError } from '../auth/api'
 import type { AdminProject, Lookup } from '../auth/types'
 import { useAuth } from '../auth/useAuth'
+import { Link } from 'react-router-dom'
 
 type LookupKind = 'skills' | 'interests' | 'categories'
 const inputClass = 'min-h-12 w-full rounded-xl border border-white/15 bg-slate-950 px-4 py-3 text-white'
@@ -87,6 +88,7 @@ export function AdminPage() {
   return (
     <main className="mx-auto min-h-[65vh] max-w-6xl px-5 py-10 sm:px-8 sm:py-14">
       <p className="text-sm font-bold uppercase tracking-[0.18em] text-cyan-300">Admin only</p><h1 className="mt-3 text-4xl font-black tracking-tight">Catalog and project workspace</h1>
+      <Link className="mt-6 inline-flex min-h-12 items-center rounded-xl bg-violet-400 px-5 font-bold text-slate-950 hover:bg-violet-300" to="/admin/workflows">Open applications, teams, and dashboard</Link>
       {error && <p className="mt-6 rounded-xl border border-red-300/30 bg-red-400/10 p-4 text-red-200" role="alert">{error}</p>}
       {message && <p className="mt-6 rounded-xl border border-emerald-300/30 bg-emerald-400/10 p-4 text-emerald-200" role="status">{message}</p>}
 

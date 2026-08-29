@@ -17,4 +17,6 @@ public sealed class ProjectTopic
     public DateTimeOffset CreatedAt { get; set; }
     public DateTimeOffset UpdatedAt { get; set; }
     public ICollection<ProjectRequiredSkill> RequiredSkills { get; set; } = [];
+    public ICollection<ProjectApplication> Applications { get; set; } = [];
+    public Team? Team { get; set; }
 }

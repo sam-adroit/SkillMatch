@@ -18,3 +18,9 @@ Verification:
 npm run lint --prefix SkillMatchFE
 npm run build --prefix SkillMatchFE
 ```
+
+Student routes include the profile, published-project catalog/detail, project
+application form, and **My work** application/team status view. Admins use the
+catalog/project workspace plus the responsive applications, team editor, and count
+dashboard at `/admin/workflows`. The API enforces every role and workflow rule; UI
+visibility is not treated as authorization.

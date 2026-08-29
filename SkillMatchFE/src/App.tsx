@@ -11,6 +11,8 @@ import { ProfilePage } from './pages/ProfilePage'
 import { ProjectDetailPage } from './pages/ProjectDetailPage'
 import { ProjectsPage } from './pages/ProjectsPage'
 import { RegisterPage } from './pages/RegisterPage'
+import { MyWorkPage } from './pages/MyWorkPage'
+import { AdminWorkflowPage } from './pages/AdminWorkflowPage'
 
 function App() {
   return (
@@ -28,9 +30,11 @@ function App() {
             </Route>
             <Route element={<ProtectedRoute requiredRole="Student" />}>
               <Route path="profile" element={<ProfilePage />} />
+              <Route path="my-work" element={<MyWorkPage />} />
             </Route>
             <Route element={<ProtectedRoute requiredRole="Admin" />}>
               <Route path="admin" element={<AdminPage />} />
+              <Route path="admin/workflows" element={<AdminWorkflowPage />} />
             </Route>
             <Route path="*" element={<NotFoundPage />} />
           </Route>

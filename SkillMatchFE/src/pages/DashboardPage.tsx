@@ -23,10 +23,9 @@ export function DashboardPage() {
           Browse projects
         </Link>
         {user?.role === 'Student' && (
-          <Link className="rounded-xl border border-white/15 px-5 py-3 font-bold hover:bg-white/10" to="/profile">
-            Complete profile
-          </Link>
+          <><Link className="rounded-xl border border-white/15 px-5 py-3 font-bold hover:bg-white/10" to="/profile">Complete profile</Link><Link className="rounded-xl border border-white/15 px-5 py-3 font-bold hover:bg-white/10" to="/my-work">Applications and team</Link></>
         )}
+        {user?.role === 'Admin' && <Link className="rounded-xl border border-white/15 px-5 py-3 font-bold hover:bg-white/10" to="/admin/workflows">Review applications and teams</Link>}
       </div>
     </main>
   )

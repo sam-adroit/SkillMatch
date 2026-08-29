@@ -40,7 +40,10 @@ the Railway deployment artifact. Run these commands from the repository root.
    `host.docker.internal`, because a container's `127.0.0.1` points to the
    container itself. `Database__ApplyMigrations=true` applies the committed EF Core
    migrations at startup. `DemoSeed__Enabled=true` creates the configured Admin if
-   it does not exist and seeds a small lookup/project catalog for local testing.
+   it does not exist and seeds a small lookup/project catalog plus two complete
+   Student profiles (`demo-student1@skillmatch.local` and
+   `demo-student2@skillmatch.local`). The demo Students use the same externally
+   configured demo password; no password is hard-coded.
    Keep it `false` in production. Never commit `SkillMatchBE/.env`.
 
 3. Build and run the backend image:
@@ -169,6 +172,11 @@ dotnet ef migrations add <MigrationName> --project .\SkillMatchBE --startup-proj
 - Published project catalog/detail: `GET /api/projects` and `GET /api/projects/{id}`
 - Admin lookup CRUD: `POST /api/admin/{skills|interests|categories}` plus `PUT/DELETE` with an ID
 - Admin project management: `GET/POST /api/admin/projects`, `PUT/DELETE /api/admin/projects/{id}`, and `PATCH /api/admin/projects/{id}/status`
+- Student applications: `POST /api/projects/{id}/applications` and `GET /api/applications`
+- Admin application review: `GET /api/admin/applications` with optional `status`/`projectId` filters and `PATCH /api/admin/applications/{id}/decision`
+- Team views: `GET /api/teams` and `GET /api/teams/{id}`; Students receive only their active teams
+- Admin team management: `POST /api/admin/teams` and `PUT /api/admin/teams/{id}`
+- Admin counts: `GET /api/admin/dashboard`
 
 The health endpoint returns HTTP 200 when PostgreSQL is reachable and HTTP 503
 otherwise. Unknown routes and unhandled API errors use Problem Details JSON with a
@@ -188,6 +196,26 @@ The `AddProfilesAndProjects` migration is additive: it creates normalized lookup
 student-profile, project, and join tables without rewriting existing users. Startup
 migration execution remains suitable for the current single API instance. Run
 migrations as a separate deployment step before scaling the API horizontally.
+
+The additive `AddApplicationsAndTeams` migration creates applications, teams, and
+membership tables with unique Student/project applications, one team per project,
+status query indexes, decision/team timestamps, and restrictive foreign keys.
+Application decisions and membership changes run in serializable PostgreSQL
+transactions. A Student needs a saved profile to apply; projects must be Published;
+duplicate applications, approvals beyond project capacity, unapproved team members,
+and a second active team assignment in the implicit course cycle are rejected.
+
+## Application and team demo flow
+
+1. As Admin, publish a project and note its maximum team size.
+2. As a demo Student, complete the profile if needed, open the project, submit an
+   application, and verify Pending status under **My work**.
+3. As Admin, open **Applications, teams, and dashboard**, filter Pending
+   applications, and mark the application Approved.
+4. Select the project in the team form, select only Approved Students, choose one
+   selected member as leader, and create the team.
+5. Return as the Student and verify Approved status plus team name, leader, and
+   membership under **My work**. Dashboard counts should update after each action.
 
 ## Railway configuration
 

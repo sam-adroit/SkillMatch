@@ -56,11 +56,10 @@ export function AppShell() {
                     </NavLink>
                   </li>
                   {user.role === 'Student' && (
-                    <li>
-                      <NavLink className={navLinkClass} to="/profile">
-                        Profile
-                      </NavLink>
-                    </li>
+                    <>
+                      <li><NavLink className={navLinkClass} to="/my-work">My work</NavLink></li>
+                      <li><NavLink className={navLinkClass} to="/profile">Profile</NavLink></li>
+                    </>
                   )}
                   {user.role === 'Admin' && (
                     <li>
