@@ -9,14 +9,26 @@ React 19, TypeScript, Vite, and Tailwind CSS.
 
 - Docker Desktop, required for the canonical backend workflow
 - Railway CLI and access to the linked project, for the PostgreSQL tunnel
+- PowerShell 7, for the documented setup and smoke-verification commands
 - Node.js 22 or later and npm
 - .NET 10 SDK, required for tests and optional direct backend development
 
 ## Repository structure
 
-- `SkillMatchBE` — API, database context, Dockerfile, and planned application layers
+- `SkillMatchBE` — API, controllers, services, repositories, database context, and Dockerfile
 - `SkillMatchBE.Tests` — xUnit unit and API integration tests
 - `SkillMatchFE` — React, TypeScript, Vite, and Tailwind CSS frontend
+- `docs` — Student/Admin guides, demo checklist, traceability, test evidence, and diagrams
+- `scripts` — presentation-ready API smoke verification
+
+## Documentation map
+
+- [Student guide](docs/student-guide.md)
+- [Admin / instructor guide](docs/admin-guide.md)
+- [End-to-end demo checklist](docs/demo-checklist.md)
+- [Requirements traceability and simplifications](docs/traceability.md)
+- [Test and deployment evidence](docs/test-evidence.md)
+- [Architecture, ER/class, sequence, communication, and VOPC diagrams](docs/diagrams/README.md)
 
 ## Canonical backend workflow — Docker
 
@@ -47,7 +59,7 @@ the Railway deployment artifact. Run these commands from the repository root.
    `OPENAI_API_KEY`, `OPENAI_MODEL=gpt-5-mini`, and optional
    `OPENAI_TIMEOUT_SECONDS=15` values for live recommendation explanations.
    These values are passed only at container runtime—not as Docker build arguments.
-   Keep it `false` in production. Never commit `SkillMatchBE/.env`.
+   Keep `DemoSeed__Enabled=false` in production. Never commit `SkillMatchBE/.env`.
 
 3. Build and run the backend image:
 
@@ -134,8 +146,10 @@ dependencies, and start Vite:
 
 ```powershell
 Copy-Item .\SkillMatchFE\.env.example .\SkillMatchFE\.env
-npm install --prefix .\SkillMatchFE
-npm run dev --prefix .\SkillMatchFE
+Push-Location .\SkillMatchFE
+npm install
+npm run dev
+Pop-Location
 ```
 
 The frontend is available at <http://localhost:5173> and calls the backend URL in
@@ -166,6 +180,23 @@ Remove-Item Env:RUN_OPENAI_SMOKE_TEST
 
 The API integration tests use an isolated, non-connecting PostgreSQL connection
 string. A successful host build/test does not replace the Docker verification above.
+
+After the Docker container is healthy, run the compact read-only smoke script. The
+credentials are prompted securely and are not printed. Omit either credential to
+skip that role's checks. Add `-GenerateRecommendation` only when a live OpenAI call
+or stored-batch reuse is intentionally part of the check.
+
+```powershell
+$studentCredential = Get-Credential -Message "Demo Student" -UserName "demo-student1@skillmatch.local"
+$adminCredential = Get-Credential -Message "Demo Admin" -UserName "admin@skillmatch.local"
+.\scripts\smoke.ps1 -BaseUrl http://localhost:5227 -StudentCredential $studentCredential -AdminCredential $adminCredential
+```
+
+For public infrastructure-only verification without credentials:
+
+```powershell
+.\scripts\smoke.ps1 -BaseUrl https://api-production-84ad.up.railway.app
+```
 
 Create a new migration after changing the EF Core model with the repository-local tool:
 
@@ -329,3 +360,21 @@ The Dockerfile accepts Railway's dynamic `PORT`, while the same double-underscor
 configuration names work unchanged in local Docker and Railway. The API remains a
 single-instance deployment for startup migration execution; migrate separately
 before scaling beyond one instance.
+
+## Troubleshooting
+
+| Symptom | Check and resolution |
+|---|---|
+| Container cannot reach PostgreSQL | Keep the Railway tunnel open, copy its port into `PGPORT`, and use `PGHOST=host.docker.internal` from Docker. |
+| `/health/database` returns 503 | Verify the five `PG*` values, tunnel, network access, and PostgreSQL service status before changing code. |
+| API exits during startup | Confirm `Jwt__Key` is at least 32 UTF-8 bytes and enabled demo seeding has a valid Admin email/password of at least 12 characters. |
+| Browser reports a CORS error | Confirm `VITE_API_URL` names the API, and the browser origin appears in backend `Cors__AllowedOrigins`. Never put an OpenAI key in Vite configuration. |
+| Swagger returns 401/403 | Log in again, use **Authorize** with only the token, and confirm the selected endpoint permits the token's Student/Admin role. |
+| Recommendation shows Fallback | Check backend-only OpenAI variables, billing, outbound HTTPS, provider timeout, and API logs. Ordinary workflows should remain available. |
+| Recommendation does not call OpenAI again | An unchanged current AI batch is intentionally reused. Save a profile skill/technology or update a ranked project to invalidate it. |
+| Migration fails in Railway | Keep one API instance for startup migration, inspect deployment logs, and verify the database user can apply the additive migrations. |
+| Frontend route returns 404 after refresh | Confirm Railway detected the Vite static-site build and Caddy SPA fallback; redeploy the Web service from `SkillMatchFE`. |
+
+For a clean rehearsal, stop/remove only your task-created container, reopen the
+PostgreSQL tunnel, recreate ignored `.env` files from their examples, and repeat the
+canonical Docker, frontend, automated verification, and smoke commands in order.

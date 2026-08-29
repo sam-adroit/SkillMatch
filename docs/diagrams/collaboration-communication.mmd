@@ -1,0 +1,30 @@
+%%{init: {"theme": "neutral", "flowchart": {"curve": "linear"}}}%%
+flowchart LR
+    Student([Student])
+    UI[React UI]
+    AppController[ApplicationsController]
+    Workflow[WorkflowService]
+    WorkflowRepo[ApplicationTeamRepository]
+    RecController[RecommendationsController]
+    RecService[RecommendationService]
+    RecRepo[RecommendationRepository]
+    DB[(PostgreSQL)]
+    Provider[OpenAIRecommendationProvider]
+    OpenAI[OpenAI Responses API]
+
+    Student -->|1: apply or generate| UI
+    UI -->|2a: POST application| AppController
+    AppController -->|3a: ApplyAsync| Workflow
+    Workflow -->|4a: transactional checks + save| WorkflowRepo
+    WorkflowRepo -->|5a: query / insert| DB
+
+    UI -->|2b: POST recommendations| RecController
+    RecController -->|3b: RecommendProjectsAsync| RecService
+    RecService -->|4b: profile / projects / history| RecRepo
+    RecRepo -->|5b: query / insert| DB
+    RecService -->|6b: explanation request| Provider
+    Provider -->|7b: /v1/responses| OpenAI
+    OpenAI -->|8b: structured explanations| Provider
+    Provider -->|9b: provider result| RecService
+    RecService -->|10b: ranked batch| RecController
+    RecController -->|11b: HTTP response| UI

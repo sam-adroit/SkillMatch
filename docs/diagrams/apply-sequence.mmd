@@ -1,0 +1,40 @@
+%%{init: {"theme": "neutral"}}%%
+sequenceDiagram
+    autonumber
+    actor Student
+    participant UI as React Project Detail
+    participant Controller as ApplicationsController
+    participant Service as WorkflowService
+    participant Repo as ApplicationTeamRepository
+    participant ProjectRepo as ProjectRepository
+    participant ProfileRepo as ProfileRepository
+    participant DB as PostgreSQL
+
+    Student->>UI: Submit optional application note
+    UI->>Controller: POST /api/projects/{id}/applications + JWT
+    Controller->>Service: ApplyAsync(studentId, projectId, request)
+    Service->>Repo: Begin serializable transaction
+    Service->>ProfileRepo: GetAsync(studentId)
+    ProfileRepo->>DB: Query saved profile
+    DB-->>ProfileRepo: Profile or none
+    alt Missing profile
+        Service-->>Controller: MissingProfile
+        Controller-->>UI: 400 Problem Details
+    else Profile exists
+        Service->>ProjectRepo: GetAsync(projectId)
+        ProjectRepo->>DB: Query project
+        DB-->>ProjectRepo: Project
+        Service->>Repo: GetApplicationAsync(studentId, projectId)
+        Repo->>DB: Query unique application
+        alt Project not published or duplicate
+            Service-->>Controller: ProjectClosed or DuplicateApplication
+            Controller-->>UI: 409 Problem Details
+        else Valid application
+            Service->>Repo: AddApplicationAsync(Pending, AppliedAt)
+            Repo->>DB: INSERT ProjectApplications
+            DB-->>Repo: Commit
+            Service-->>Controller: ApplicationResponse
+            Controller-->>UI: 201 Created
+            UI-->>Student: Pending status displayed
+        end
+    end

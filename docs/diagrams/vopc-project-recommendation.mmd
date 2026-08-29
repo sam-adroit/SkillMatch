@@ -1,0 +1,28 @@
+%%{init: {"theme": "neutral"}}%%
+flowchart LR
+    Actor([Student actor])
+    subgraph Boundary[Boundary classes]
+        RecPage[RecommendationsPage<br/>&lt;&lt;boundary&gt;&gt;]
+        RecController[RecommendationsController<br/>&lt;&lt;boundary&gt;&gt;]
+        OpenAIAdapter[OpenAIRecommendationProvider<br/>&lt;&lt;external boundary&gt;&gt;]
+    end
+    subgraph Control[Control classes]
+        RecService[RecommendationService<br/>&lt;&lt;control&gt;&gt;]
+        Scoring[Named deterministic scoring<br/>&lt;&lt;control logic&gt;&gt;]
+    end
+    subgraph Entity[Entity and persistence classes]
+        RecRepo[IRecommendationRepository<br/>&lt;&lt;repository&gt;&gt;]
+        Profile[StudentProfile<br/>&lt;&lt;entity&gt;&gt;]
+        Project[ProjectTopic<br/>&lt;&lt;entity&gt;&gt;]
+        History[RecommendationHistory<br/>&lt;&lt;entity&gt;&gt;]
+    end
+    OpenAI[OpenAI Responses API<br/>&lt;&lt;external system&gt;&gt;]
+
+    Actor --> RecPage --> RecController --> RecService
+    RecService --> RecRepo
+    RecRepo --> Profile
+    RecRepo --> Project
+    RecRepo --> History
+    RecService --> Scoring
+    RecService --> OpenAIAdapter --> OpenAI
+    RecService -. provider failure .-> Scoring

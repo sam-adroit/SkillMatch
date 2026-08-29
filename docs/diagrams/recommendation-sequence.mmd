@@ -1,0 +1,40 @@
+%%{init: {"theme": "neutral"}}%%
+sequenceDiagram
+    autonumber
+    actor Student
+    participant UI as React Recommendations Page
+    participant Controller as RecommendationsController
+    participant Service as RecommendationService
+    participant Repo as RecommendationRepository
+    participant DB as PostgreSQL
+    participant Provider as OpenAIRecommendationProvider
+    participant OpenAI as OpenAI Responses API
+
+    Student->>UI: Generate recommendations
+    UI->>Controller: POST /api/recommendations/projects + JWT
+    Controller->>Service: RecommendProjectsAsync(studentId)
+    Service->>Repo: GetProfileAsync + GetPublishedProjectsAsync
+    Repo->>DB: Query profile, skills, interests, projects
+    DB-->>Repo: Saved matching data
+    Service->>Service: Score all projects with named deterministic weights
+    Service->>Service: Stable sort and select top three
+    Service->>Repo: GetHistoryAsync(studentId)
+    Repo->>DB: Query latest recommendation batch
+    alt Current AI batch is reusable
+        Service-->>Controller: Stored ranked batch (reused = true)
+    else Fresh explanations required
+        Service->>Provider: Privacy-minimized top-three facts
+        Provider->>OpenAI: POST /v1/responses with strict JSON schema
+        alt Valid provider response
+            OpenAI-->>Provider: Three short explanations
+            Provider-->>Service: OpenAI / model metadata
+        else Missing key, timeout, refusal, HTTP or schema failure
+            Provider--xService: Provider failure
+            Service->>Service: Build deterministic fallback explanations
+        end
+        Service->>Repo: AddHistoryAsync(batch + provider status)
+        Repo->>DB: INSERT RecommendationHistory
+        Service-->>Controller: Ranked batch (reused = false)
+    end
+    Controller-->>UI: 200 results + AI/Fallback status
+    UI-->>Student: Scores, match facts, explanation, status badge

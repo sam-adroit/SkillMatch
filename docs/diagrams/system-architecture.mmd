@@ -1,0 +1,42 @@
+%%{init: {"theme": "neutral", "flowchart": {"curve": "basis"}}}%%
+flowchart LR
+    Student([Student])
+    Admin([Admin / Instructor])
+
+    subgraph Client[Browser client]
+        UI[React 19 + TypeScript<br/>Vite + Tailwind CSS]
+    end
+    subgraph API[ASP.NET Core .NET 10 API]
+        Controllers[REST Controllers<br/>DTO + role boundary]
+        Services[Services<br/>business rules + ownership]
+        Repositories[Repository interfaces<br/>EF Core implementations]
+        Matcher[Deterministic matcher<br/>stable scores + fallback]
+        Provider[OpenAI provider adapter<br/>Responses API + JSON schema]
+    end
+
+    Database[(PostgreSQL)]
+    OpenAI[OpenAI Responses API]
+
+    Student --> UI
+    Admin --> UI
+    UI -->|HTTPS + JWT| Controllers
+    Controllers --> Services
+    Services --> Repositories
+    Repositories -->|EF Core / Npgsql| Database
+    Services --> Matcher
+    Services --> Provider
+    Provider -->|backend-only API key| OpenAI
+
+    subgraph Local[Local runtime]
+        Vite[Vite dev server]
+        Docker[API Docker container<br/>port 8080 -> 5227]
+        Tunnel[Railway PostgreSQL tunnel]
+        Vite --> Docker --> Tunnel
+    end
+
+    subgraph Production[Railway production]
+        Web[Web service<br/>direct Railpack deployment]
+        ApiService[API service<br/>SkillMatchBE/Dockerfile]
+        PgService[(PostgreSQL service)]
+        Web --> ApiService --> PgService
+    end

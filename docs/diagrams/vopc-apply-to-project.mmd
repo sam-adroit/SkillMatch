@@ -1,0 +1,23 @@
+%%{init: {"theme": "neutral"}}%%
+flowchart LR
+    Actor([Student actor])
+    subgraph Boundary[Boundary classes]
+        ProjectPage[ProjectDetailPage<br/>&lt;&lt;boundary&gt;&gt;]
+        ApplicationsApi[ApplicationsController<br/>&lt;&lt;boundary&gt;&gt;]
+    end
+    subgraph Control[Control classes]
+        WorkflowService[WorkflowService<br/>&lt;&lt;control&gt;&gt;]
+    end
+    subgraph Entity[Entity and persistence classes]
+        ProfileRepo[IProfileRepository<br/>&lt;&lt;repository&gt;&gt;]
+        ProjectRepo[IProjectRepository<br/>&lt;&lt;repository&gt;&gt;]
+        WorkflowRepo[IApplicationTeamRepository<br/>&lt;&lt;repository&gt;&gt;]
+        Profile[StudentProfile<br/>&lt;&lt;entity&gt;&gt;]
+        Project[ProjectTopic<br/>&lt;&lt;entity&gt;&gt;]
+        Application[ProjectApplication<br/>&lt;&lt;entity&gt;&gt;]
+    end
+
+    Actor --> ProjectPage --> ApplicationsApi --> WorkflowService
+    WorkflowService --> ProfileRepo --> Profile
+    WorkflowService --> ProjectRepo --> Project
+    WorkflowService --> WorkflowRepo --> Application

@@ -1,0 +1,109 @@
+%%{init: {"theme": "neutral"}}%%
+erDiagram
+    APPLICATION_USER ||--o| STUDENT_PROFILE : owns
+    APPLICATION_USER ||--o{ PROJECT_APPLICATION : submits
+    APPLICATION_USER ||--o{ TEAM_MEMBER : joins
+    APPLICATION_USER ||--o{ RECOMMENDATION_HISTORY : receives
+
+    STUDENT_PROFILE ||--o{ STUDENT_PROFILE_SKILL : has
+    SKILL ||--o{ STUDENT_PROFILE_SKILL : selected_by
+    STUDENT_PROFILE ||--o{ STUDENT_PROFILE_INTEREST : has
+    INTEREST ||--o{ STUDENT_PROFILE_INTEREST : selected_by
+
+    CATEGORY ||--o{ PROJECT_TOPIC : classifies
+    PROJECT_TOPIC ||--o{ PROJECT_REQUIRED_SKILL : requires
+    SKILL ||--o{ PROJECT_REQUIRED_SKILL : required_by
+    PROJECT_TOPIC ||--o{ PROJECT_APPLICATION : receives
+    PROJECT_TOPIC ||--o| TEAM : assigned_team
+    TEAM ||--|{ TEAM_MEMBER : contains
+    APPLICATION_USER ||--o{ TEAM : leads
+
+    APPLICATION_USER {
+        uuid Id PK
+        string Email UK
+        string PasswordHash
+        enum Role
+        bool IsActive
+        datetime CreatedAt
+    }
+    STUDENT_PROFILE {
+        uuid UserId PK,FK
+        enum ExperienceLevel
+        string Goals
+        string_array PreferredTechnologies
+        datetime UpdatedAt
+    }
+    SKILL {
+        uuid Id PK
+        string Name
+        string NormalizedName UK
+    }
+    INTEREST {
+        uuid Id PK
+        string Name
+        string NormalizedName UK
+    }
+    CATEGORY {
+        uuid Id PK
+        string Name
+        string NormalizedName UK
+    }
+    PROJECT_TOPIC {
+        uuid Id PK
+        uuid CategoryId FK
+        string Title UK
+        enum Difficulty
+        enum Status
+        int MinimumTeamSize
+        int PreferredTeamSize
+        int MaximumTeamSize
+        datetime CreatedAt
+        datetime UpdatedAt
+    }
+    PROJECT_APPLICATION {
+        uuid Id PK
+        uuid StudentId FK
+        uuid ProjectId FK
+        enum Status
+        string Note
+        datetime AppliedAt
+        datetime DecidedAt
+    }
+    TEAM {
+        uuid Id PK
+        uuid ProjectId FK,UK
+        uuid LeaderStudentId FK
+        string Name
+        enum Status
+        datetime CreatedAt
+        datetime UpdatedAt
+    }
+    TEAM_MEMBER {
+        uuid TeamId PK,FK
+        uuid StudentId PK,FK
+        datetime JoinedAt
+    }
+    STUDENT_PROFILE_SKILL {
+        uuid ProfileUserId PK,FK
+        uuid SkillId PK,FK
+    }
+    STUDENT_PROFILE_INTEREST {
+        uuid ProfileUserId PK,FK
+        uuid InterestId PK,FK
+    }
+    PROJECT_REQUIRED_SKILL {
+        uuid ProjectId PK,FK
+        uuid SkillId PK,FK
+    }
+    RECOMMENDATION_HISTORY {
+        uuid Id PK
+        uuid StudentId FK
+        enum Type
+        uuid TargetId "logical project reference; no FK"
+        decimal Score
+        string Explanation
+        string Provider
+        string Model
+        enum ProviderStatus
+        datetime CreatedAt
+    }
