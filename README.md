@@ -15,7 +15,7 @@ React 19, TypeScript, Vite, and Tailwind CSS.
 
 ## Repository structure
 
-- `SkillMatchBE` — API, controllers, services, repositories, database context, and Dockerfile
+- `SKillMatchBE` — API, controllers, services, repositories, database context, and Dockerfile
 - `SkillMatchBE.Tests` — xUnit unit and API integration tests
 - `SkillMatchFE` — React, TypeScript, Vite, and Tailwind CSS frontend
 - `docs` — Student/Admin guides, demo checklist, traceability, test evidence, and diagrams
@@ -28,11 +28,13 @@ React 19, TypeScript, Vite, and Tailwind CSS.
 - [End-to-end demo checklist](docs/demo-checklist.md)
 - [Requirements traceability and simplifications](docs/traceability.md)
 - [Test and deployment evidence](docs/test-evidence.md)
+- [Presentation checklist](docs/presentation-checklist.md)
+- [Railway and fallback evidence](docs/presentation-evidence.md)
 - [Architecture, ER/class, sequence, communication, and VOPC diagrams](docs/diagrams/README.md)
 
 ## Canonical backend workflow — Docker
 
-The committed `SkillMatchBE/Dockerfile` is the canonical local backend runtime and
+The committed `SKillMatchBE/Dockerfile` is the canonical local backend runtime and
 the Railway deployment artifact. Run these commands from the repository root.
 
 1. Start the PostgreSQL tunnel in its own terminal:
@@ -44,7 +46,7 @@ the Railway deployment artifact. Run these commands from the repository root.
 2. Create the ignored container environment file once:
 
    ```powershell
-   Copy-Item .\SkillMatchBE\.env.example .\SkillMatchBE\.env
+   Copy-Item .\SKillMatchBE\.env.example .\SKillMatchBE\.env
    ```
 
    Fill in the tunnel values reported by Railway, generate a unique JWT signing
@@ -59,13 +61,13 @@ the Railway deployment artifact. Run these commands from the repository root.
    `OPENAI_API_KEY`, `OPENAI_MODEL=gpt-5-mini`, and optional
    `OPENAI_TIMEOUT_SECONDS=15` values for live recommendation explanations.
    These values are passed only at container runtime—not as Docker build arguments.
-   Keep `DemoSeed__Enabled=false` in production. Never commit `SkillMatchBE/.env`.
+   Keep `DemoSeed__Enabled=false` in production. Never commit `SKillMatchBE/.env`.
 
 3. Build and run the backend image:
 
    ```powershell
-   docker build -t skillmatch-be .\SkillMatchBE
-   docker run -d --rm --name skillmatch-be --env-file .\SkillMatchBE\.env -p 5227:8080 skillmatch-be
+   docker build -t skillmatch-be .\SKillMatchBE
+   docker run -d --rm --name skillmatch-be --env-file .\SKillMatchBE\.env -p 5227:8080 skillmatch-be
    ```
 
 4. Verify the containerized API:
@@ -94,7 +96,7 @@ the Railway deployment artifact. Run these commands from the repository root.
 
    1. Open <http://localhost:5227/swagger>.
    2. Run `POST /api/auth/login` with the seeded Admin email and password from
-      the ignored `SkillMatchBE/.env` file.
+      the ignored `SKillMatchBE/.env` file.
    3. Copy only the `token` field from the successful response.
    4. Click **Authorize** in Swagger and paste the token exactly as the dialog
       instructs. Do not add a `Bearer ` prefix when the dialog requests only the token.
@@ -120,7 +122,7 @@ acceptance. Configure the connection string through .NET User Secrets and point 
 at the host tunnel:
 
 ```powershell
-cd .\SkillMatchBE
+cd .\SKillMatchBE
 dotnet user-secrets set "ConnectionStrings:DefaultConnection" "Host=127.0.0.1;Port=61916;Database=<DATABASE>;Username=<USER>;Password=<PASSWORD>"
 dotnet user-secrets set "Jwt:Issuer" "SkillMatchBE"
 dotnet user-secrets set "Jwt:Audience" "SkillMatchFE"
@@ -161,9 +163,9 @@ contain secrets.
 Run these checks from the repository root:
 
 ```powershell
-dotnet restore .\SkillMatchBE\SkillMatchBE.sln
-dotnet build .\SkillMatchBE\SkillMatchBE.sln
-dotnet test .\SkillMatchBE\SkillMatchBE.sln
+dotnet restore .\SKillMatchBE\SkillMatchBE.sln
+dotnet build .\SKillMatchBE\SkillMatchBE.sln
+dotnet test .\SKillMatchBE\SkillMatchBE.sln
 npm run lint --prefix .\SkillMatchFE
 npm run build --prefix .\SkillMatchFE
 ```
@@ -174,7 +176,7 @@ the backend's existing user-secrets without printing it:
 
 ```powershell
 $env:RUN_OPENAI_SMOKE_TEST = "1"
-dotnet test .\SkillMatchBE\SkillMatchBE.sln --filter "Category=OpenAISmoke"
+dotnet test .\SKillMatchBE\SkillMatchBE.sln --filter "Category=OpenAISmoke"
 Remove-Item Env:RUN_OPENAI_SMOKE_TEST
 ```
 
@@ -202,7 +204,7 @@ Create a new migration after changing the EF Core model with the repository-loca
 
 ```powershell
 dotnet tool restore
-dotnet ef migrations add <MigrationName> --project .\SkillMatchBE --startup-project .\SkillMatchBE --output-dir Migrations
+dotnet ef migrations add <MigrationName> --project .\SKillMatchBE --startup-project .\SKillMatchBE --output-dir Migrations
 ```
 
 ## API behavior
@@ -219,7 +221,7 @@ dotnet ef migrations add <MigrationName> --project .\SkillMatchBE --startup-proj
 - Published project catalog/detail: `GET /api/projects` and `GET /api/projects/{id}`
 - Admin lookup CRUD: `POST /api/admin/{skills|interests|categories}` plus `PUT/DELETE` with an ID
 - Admin project management: `GET/POST /api/admin/projects`, `PUT/DELETE /api/admin/projects/{id}`, and `PATCH /api/admin/projects/{id}/status`
-- Student applications: `POST /api/projects/{id}/applications` and `GET /api/applications`
+- Student applications: `POST /api/projects/{id}/applications` and `GET /api/applications`; responses include the project's current status so closed-project history remains visible without a dead detail link
 - Admin application review: `GET /api/admin/applications` with optional `status`/`projectId` filters and `PATCH /api/admin/applications/{id}/decision`
 - Team views: `GET /api/teams` and `GET /api/teams/{id}`; Students receive only their active teams
 - Admin team management: `POST /api/admin/teams` and `PUT /api/admin/teams/{id}`
@@ -238,7 +240,9 @@ Student/Admin role used by authorization policies.
 Project search is evaluated in PostgreSQL and supports `search`, `skillId`,
 `categoryId`, `difficulty`, `available`, and `teamSize` query parameters. Students
 only receive published projects; unpublished and closed projects return 404 from
-the student detail endpoint. Admin notes are present only in Admin project responses.
+the student detail endpoint. My Work preserves existing applications and decisions
+for a closed project, labels it **Project closed**, and does not show a working-looking
+detail link. Admin notes are present only in Admin project responses.
 Project titles and lookup names are unique without regard to case. Projects require
 at least one skill and team sizes ordered as minimum ≤ preferred ≤ maximum. Only
 Draft projects can be deleted; publish or close projects through the status endpoint.
@@ -311,7 +315,7 @@ test an outage.
 
 ## Railway configuration
 
-Railway builds the API from `SkillMatchBE/Dockerfile`. The backend supports the same
+Railway builds the API from `SKillMatchBE/Dockerfile`. The backend supports the same
 environment-variable shape used by the local container:
 
 ```text
@@ -356,10 +360,11 @@ Production endpoints:
 - Swagger: <https://api-production-84ad.up.railway.app/swagger>
 - PostgreSQL health: <https://api-production-84ad.up.railway.app/health/database>
 
-The Dockerfile accepts Railway's dynamic `PORT`, while the same double-underscore
-configuration names work unchanged in local Docker and Railway. The API remains a
-single-instance deployment for startup migration execution; migrate separately
-before scaling beyond one instance.
+Railway detects the Dockerfile's production listener on port 8080 and routes its
+public HTTPS domain to that container port. The same double-underscore configuration
+names work unchanged in local Docker and Railway. The API remains a single-instance
+deployment for startup migration execution; migrate separately before scaling beyond
+one instance.
 
 ## Troubleshooting
 

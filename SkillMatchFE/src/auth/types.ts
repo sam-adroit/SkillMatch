@@ -55,6 +55,7 @@ export type ProjectApplication = {
   studentEmail: string
   projectId: string
   projectTitle: string
+  projectStatus: 'Draft' | 'Published' | 'Closed'
   note: string
   status: 'Pending' | 'Approved' | 'Rejected' | 'Waitlisted'
   appliedAt: string

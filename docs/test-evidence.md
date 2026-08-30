@@ -8,9 +8,9 @@ fresh checkout. Manual acceptance remains a separate required gate.
 
 | Check | Result | Evidence |
 |---|---|---|
-| `dotnet restore .\SkillMatchBE\SkillMatchBE.sln` | Pass | Restore completed with all projects current. |
-| `dotnet build .\SkillMatchBE\SkillMatchBE.sln --no-restore` | Pass | 0 warnings, 0 errors. |
-| `dotnet test .\SkillMatchBE\SkillMatchBE.sln --no-build --no-restore` | Pass | 52 passed, 0 failed, 0 skipped. |
+| `dotnet restore .\SKillMatchBE\SkillMatchBE.sln` | Pass | Restore completed with all projects current. |
+| `dotnet build .\SKillMatchBE\SkillMatchBE.sln --no-restore` | Pass | 0 warnings, 0 errors. |
+| `dotnet test .\SKillMatchBE\SkillMatchBE.sln --no-build --no-restore` | Pass | 53 passed, 0 failed, 0 skipped. |
 | `npm install` from `SkillMatchFE` | Pass | Dependencies current; audit reported 0 vulnerabilities. |
 | `npm run lint --prefix .\SkillMatchFE` | Pass | ESLint completed without errors. |
 | `npm run build --prefix .\SkillMatchFE` | Pass | Vite 8.2.0 production build completed; 43 modules transformed. |
@@ -30,7 +30,7 @@ or test change was needed.
 The canonical backend artifact was rebuilt cleanly with:
 
 ```powershell
-docker build --no-cache -t skillmatch-be-plan006 .\SkillMatchBE
+docker build --no-cache -t skillmatch-be-plan006 .\SKillMatchBE
 ```
 
 The image built successfully from the committed multi-stage Dockerfile. It was run
@@ -91,3 +91,45 @@ No frontend page implementation changed in Plan 006, so the changed-page viewpor
 inspection requirement is not applicable to this slice. The manual demo checklist
 still asks the reviewer to exercise the complete Student and Admin UI at mobile and
 desktop widths.
+
+## Plan 007 final verification
+
+On 2026-08-29, the final host checks again passed: backend build with 0 warnings and
+0 errors, 52/52 xUnit tests, frontend lint, and the Vite production build. A clean
+`skillmatch-be-plan007` Docker build passed and the image reported healthy
+PostgreSQL, 29 Swagger paths, and successful authenticated Student/Admin smoke
+checks through published port 5231.
+
+Production Railway API/Web/PostgreSQL were all `SUCCESS` on commit `9eb37dd`.
+HTTPS redirect, CORS allow/block behavior, JWT 401/403, Problem Details, Swagger
+Bearer configuration, current migrations, backend-only AI configuration, and
+secret-free logs passed. A forced non-cached production request returned three live
+`AiGenerated` explanations. The empty-key task container returned three labeled
+Fallback explanations while normal reads stayed available; it was removed after the
+rehearsal. See `presentation-evidence.md` for deployment IDs and rollback notes.
+
+### Closed-project manual-test correction
+
+On 2026-08-30, the focused closed-project history test passed, followed by the full
+backend build (0 warnings/errors), 53/53 xUnit tests, frontend lint, and the Vite
+production build. The application response now reports the project's current
+status, and My Work replaces the detail link with a **Project closed** label while
+retaining application and decision history.
+
+Repeated local builds from the canonical Dockerfile reached the real SDK restore
+stage but NuGet package downloads timed out. To keep runtime verification isolated,
+the already-restored Release publish was layered onto the previously verified Plan
+007 ASP.NET runtime image. That corrected image passed PostgreSQL migrations and
+seed startup, database health, Swagger Bearer configuration, authentication, and a
+closed-project boundary run through published port 5233. The application remained
+visible with `projectStatus: Closed`, its Rejected decision note/time remained, the
+project disappeared from browsing, and public detail returned 404.
+
+Railway then independently built the same correction from the canonical
+`SKillMatchBE/Dockerfile`, resolving the local network limitation. API deployment
+`266d84e6-c21d-40a1-af53-7a4dcb58b725` and Web deployment
+`4901f7c6-5526-4319-9538-e09c5b3f8e0f` both reached `SUCCESS`. Public health and
+Swagger passed. A reversible production close/read/reopen probe preserved the
+application status and decision history, excluded the closed project from browsing,
+returned 404 for its Student detail URL, and restored the project to Published in a
+`finally` block. The upload snapshot and disposable containers were removed.

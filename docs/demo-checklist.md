@@ -3,6 +3,10 @@
 This is the concise 8-10 minute presentation path. Use prepared demo data so every
 step is visible without entering secrets on screen.
 
+Use the timed rubric order and technical talking points in
+`docs/presentation-checklist.md`. Current public deployment, fallback, and rollback
+evidence is recorded in `docs/presentation-evidence.md`.
+
 ## Pre-demo checks
 
 - Production Web and API deployments report `SUCCESS` in Railway.
@@ -37,6 +41,9 @@ step is visible without entering secrets on screen.
 - Student calling an Admin endpoint receives 403.
 - Closed project, duplicate application, capacity overflow, unapproved team member,
   and second active-team assignment are rejected.
+- Closing a project removes it from Student browsing while My Work keeps the
+  application/decision history, shows **Project closed**, and provides no dead
+  project-detail link.
 - A 375px viewport has no page-level horizontal scrolling or inaccessible actions.
 - Automated test, Docker, Railway, and diagram evidence is recorded in
   `docs/test-evidence.md`.

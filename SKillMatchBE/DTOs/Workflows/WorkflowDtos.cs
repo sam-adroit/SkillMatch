@@ -16,6 +16,7 @@ public sealed record ApplicationResponse(
     string StudentEmail,
     Guid ProjectId,
     string ProjectTitle,
+    string ProjectStatus,
     string Note,
     string Status,
     DateTimeOffset AppliedAt,

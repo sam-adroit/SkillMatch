@@ -23,7 +23,9 @@ npm run build --prefix SkillMatchFE
 
 Student routes include the profile, published-project catalog/detail, project
 application form, **Recommendations** ranked-project/history/teammate workspace,
-and **My work** application/team status plus skill-gap view. Admins use the
+and **My work** application/team status plus skill-gap view. My Work preserves
+closed-project applications and decisions but replaces the unavailable detail link
+with a clear **Project closed** label. Admins use the
 catalog/project workspace plus the responsive applications, team editor, and count
 dashboard with team skill coverage at `/admin/workflows`. Recommendation cards
 label live `AI generated` and deterministic `Fallback` results distinctly. The

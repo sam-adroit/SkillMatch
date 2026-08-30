@@ -166,7 +166,8 @@ public sealed class WorkflowService(
 
     private static ApplicationResponse Map(ProjectApplication item) => new(
         item.Id, item.StudentId, item.Student.Email, item.ProjectId, item.Project.Title,
-        item.Note, item.Status.ToString(), item.AppliedAt, item.DecidedAt, item.DecisionNote);
+        item.Project.Status.ToString(), item.Note, item.Status.ToString(), item.AppliedAt,
+        item.DecidedAt, item.DecisionNote);
 
     private static TeamResponse Map(Team item) => new(
         item.Id, item.ProjectId, item.Project.Title, item.Name, item.Status.ToString(), item.Project.MaximumTeamSize,

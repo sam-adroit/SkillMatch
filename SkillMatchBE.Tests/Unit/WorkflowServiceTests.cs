@@ -75,6 +75,25 @@ public sealed class WorkflowServiceTests
     }
 
     [Fact]
+    public async Task GetStudentApplications_PreservesClosedProjectHistoryAndStatus()
+    {
+        var fixture = new Fixture();
+        var application = fixture.Application(ApplicationStatus.Rejected);
+        application.DecisionNote = "Capacity was reached";
+        application.DecidedAt = FixedNow;
+        fixture.Repository.Applications.Add(application);
+        fixture.Project.Status = ProjectStatus.Closed;
+
+        var result = await fixture.Service.GetStudentApplicationsAsync(StudentId, default);
+
+        var response = Assert.Single(result);
+        Assert.Equal("Closed", response.ProjectStatus);
+        Assert.Equal("Rejected", response.Status);
+        Assert.Equal("Capacity was reached", response.DecisionNote);
+        Assert.Equal(FixedNow, response.DecidedAt);
+    }
+
+    [Fact]
     public async Task CreateTeam_RequiresApprovedMembersAndLeaderInMembership()
     {
         var fixture = new Fixture();

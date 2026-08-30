@@ -10,6 +10,9 @@ Requests follow controller -> service -> focused repository -> `SkillMatchDbCont
 DTOs define HTTP contracts, services enforce role/ownership/business rules, and EF
 Core repositories perform persistence. Recommendation scoring is deterministic;
 OpenAI supplies privacy-minimized top-three explanations with a visible fallback.
+Application responses include the project's current status so clients can retain
+closed-project history without linking Students to a detail endpoint that correctly
+returns 404.
 
 See the root [README](../README.md) for the exercised Docker/Railway setup and
 [architecture diagrams](../docs/diagrams/README.md) for the final topology and model.
@@ -19,10 +22,10 @@ See the root [README](../README.md) for the exercised Docker/Railway setup and
 From the repository root:
 
 ```powershell
-dotnet restore .\SkillMatchBE\SkillMatchBE.sln
-dotnet build .\SkillMatchBE\SkillMatchBE.sln
-dotnet test .\SkillMatchBE\SkillMatchBE.sln
-docker build -t skillmatch-be .\SkillMatchBE
+dotnet restore .\SKillMatchBE\SkillMatchBE.sln
+dotnet build .\SKillMatchBE\SkillMatchBE.sln
+dotnet test .\SKillMatchBE\SkillMatchBE.sln
+docker build -t skillmatch-be .\SKillMatchBE
 ```
 
 Normal tests mock OpenAI. The explicitly gated live smoke test is documented in the

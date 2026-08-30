@@ -39,6 +39,8 @@ runtime configuration.
 ## Applications, teams, and skill coverage
 
 1. Open **My work** to review application decisions and active team membership.
+   If a project was closed after the application, its application and decision
+   history remain visible with a **Project closed** label and no project-detail link.
 2. For an assigned team, confirm its name, leader, members, project, and covered or
    missing required skills.
 3. Students may view only their own team data. Team creation and membership changes
