@@ -17,15 +17,19 @@ public sealed class AuthServiceTests
         var service = CreateService(repository);
 
         var result = await service.RegisterAsync(
-            new RegisterRequest(" Student@Example.edu ", "correct-horse-battery"),
+            new RegisterRequest(" Ada ", " Lovelace ", " Student@Example.edu ", "correct-horse-battery"),
             CancellationToken.None);
 
         Assert.True(result.Succeeded);
         Assert.NotNull(repository.Added);
         Assert.Equal(UserRole.Student, repository.Added.Role);
+        Assert.Equal("Ada", repository.Added.FirstName);
+        Assert.Equal("Lovelace", repository.Added.LastName);
         Assert.Equal("STUDENT@EXAMPLE.EDU", repository.Added.NormalizedEmail);
         Assert.NotEqual("correct-horse-battery", repository.Added.PasswordHash);
         Assert.Equal("Student", result.Response?.User.Role);
+        Assert.Equal("Ada", result.Response?.User.FirstName);
+        Assert.Equal("Lovelace", result.Response?.User.LastName);
     }
 
     [Fact]
@@ -38,7 +42,7 @@ public sealed class AuthServiceTests
         var service = CreateService(repository);
 
         var result = await service.RegisterAsync(
-            new RegisterRequest("STUDENT@example.edu", "correct-horse-battery"),
+            new RegisterRequest("Ada", "Lovelace", "STUDENT@example.edu", "correct-horse-battery"),
             CancellationToken.None);
 
         Assert.Equal(AuthFailure.DuplicateEmail, result.Failure);
@@ -72,6 +76,8 @@ public sealed class AuthServiceTests
 
     private static ApplicationUser CreateUser(string email, UserRole role) => new()
     {
+        FirstName = "Existing",
+        LastName = "Student",
         Email = email,
         NormalizedEmail = AuthService.NormalizeEmail(email),
         PasswordHash = "placeholder",

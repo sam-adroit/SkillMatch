@@ -9,7 +9,7 @@ export function DashboardPage() {
       <p className="text-sm font-bold uppercase tracking-[0.18em] text-cyan-300">Authenticated workspace</p>
       <h1 className="mt-3 text-4xl font-black tracking-tight">Welcome to SkillMatch</h1>
       <p className="mt-4 max-w-2xl text-lg leading-8 text-slate-300">
-        You are signed in as <span className="font-bold text-white">{user?.email}</span>.
+        You are signed in as <span className="font-bold text-white">{user?.firstName} {user?.lastName}</span>.
       </p>
       <section className="mt-10 max-w-xl rounded-2xl border border-white/10 bg-white/[0.06] p-6">
         <h2 className="text-xl font-bold">Account access</h2>

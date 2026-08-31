@@ -23,6 +23,8 @@ public sealed class ProfileServiceTests
         Assert.NotNull(result);
         Assert.Equal(0, result.CompletenessPercent);
         Assert.Equal(5, result.MissingFields.Count);
+        Assert.Equal("Test", result.FirstName);
+        Assert.Equal("Student", result.LastName);
         Assert.Equal("student@skillmatch.local", result.Email);
     }
 
@@ -117,6 +119,8 @@ public sealed class ProfileServiceTests
         private readonly ApplicationUser user = new()
         {
             Id = UserId,
+            FirstName = "Test",
+            LastName = "Student",
             Email = "student@skillmatch.local",
             NormalizedEmail = "STUDENT@SKILLMATCH.LOCAL",
             PasswordHash = "hashed",

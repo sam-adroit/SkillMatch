@@ -133,3 +133,33 @@ Swagger passed. A reversible production close/read/reopen probe preserved the
 application status and decision history, excluded the closed project from browsing,
 returned 404 for its Student detail URL, and restored the project to Published in a
 `finally` block. The upload snapshot and disposable containers were removed.
+
+## Plan 008 automated and deployment verification
+
+On 2026-08-30, the final host build completed with 0 warnings and 0 errors, all
+56/56 xUnit tests passed, and frontend lint plus the Vite production build passed.
+The canonical `SKillMatchBE/Dockerfile` built successfully as
+`skillmatch-be-plan008`. A disposable PostgreSQL rehearsal first created users
+through the pre-Plan-008 API, then started the Plan 008 image against the preserved
+database. Migration `20260830200623_AddUserNames` applied successfully,
+`jane.doe@example.edu` became `Jane Doe`, a one-part local name became
+`Singlepart User`, both unchanged email/password logins succeeded, and zero users
+had null names. Database health and Swagger's global Bearer scheme passed through
+the published container port.
+
+Railway API deployment `d71318d8-40ee-4ecb-91ea-ced208f63acb` and Web deployment
+`74eba142-4682-4792-9682-321a938918e7` both reached `SUCCESS` from a secret-free
+uncommitted source snapshot. Railway built the API from the canonical Dockerfile
+and the Web service with Railpack's Vite pipeline. Production database health and
+Swagger passed; the migration history contained `AddUserNames`, all 9 existing
+users had non-null names, and the existing Admin account logged in with its
+unchanged email credential. Runtime/build logs contained no fatal or unhandled
+errors and no high-confidence credential pattern.
+
+The deployed public UI had equal document client/scroll widths at desktop and
+375px mobile. Mobile registration exposed required bounded first/last-name fields,
+the global notification region was present, and an invalid login produced an
+automatically expiring error toast with a visible `Close toast` control rather
+than a persistent page-top mutation error. Protected Student/Admin pages had also
+passed the same desktop/mobile name and toast inspection against the unchanged
+frontend bundle during local verification.

@@ -69,10 +69,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   )
 
   const register = useCallback(
-    async (email: string, password: string) => {
+    async (firstName: string, lastName: string, email: string, password: string) => {
       const response = await apiRequest<AuthResponse>('/api/auth/register', {
         method: 'POST',
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify({ firstName, lastName, email, password }),
       })
       saveSession(response)
     },

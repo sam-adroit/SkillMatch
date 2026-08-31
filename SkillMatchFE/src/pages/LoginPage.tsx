@@ -7,6 +7,7 @@ import {
   inputClassName,
   primaryButtonClassName,
 } from '../components/AuthPageLayout'
+import { toast } from 'sonner'
 
 export function LoginPage() {
   const { user, login } = useAuth()
@@ -14,7 +15,6 @@ export function LoginPage() {
   const navigate = useNavigate()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
-  const [error, setError] = useState<string | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
 
   if (user) {
@@ -23,15 +23,15 @@ export function LoginPage() {
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
-    setError(null)
     setIsSubmitting(true)
 
     try {
       await login(email, password)
+      toast.success('Welcome back!')
       const requestedPath = (location.state as { from?: string } | null)?.from
       navigate(requestedPath || '/dashboard', { replace: true })
     } catch (caughtError) {
-      setError(
+      toast.error(
         caughtError instanceof ApiError
           ? caughtError.message
           : 'Unable to log in right now. Please try again.',
@@ -80,12 +80,6 @@ export function LoginPage() {
             onChange={(event) => setPassword(event.target.value)}
           />
         </div>
-
-        {error && (
-          <p className="rounded-xl border border-red-300/30 bg-red-400/10 px-4 py-3 text-sm text-red-200" role="alert">
-            {error}
-          </p>
-        )}
 
         <button className={primaryButtonClassName} disabled={isSubmitting} type="submit">
           {isSubmitting ? 'Logging in…' : 'Log in'}

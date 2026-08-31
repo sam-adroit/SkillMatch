@@ -36,6 +36,11 @@ evidence is recorded in `docs/presentation-evidence.md`.
    the visible Fallback state and confirm Projects/My work remain available. Do not
    alter the Railway production key.
 
+During each user-triggered save/decision/team/recommendation action, confirm a
+closable success or error toast appears without scrolling. Keep form validation and
+page-loading failures visible inline. Confirm navigation, applications, member and
+leader selection, and team lists use full names while email is used only to log in.
+
 ## Boundary evidence to mention
 
 - Student calling an Admin endpoint receives 403.

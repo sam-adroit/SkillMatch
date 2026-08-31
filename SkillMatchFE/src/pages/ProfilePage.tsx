@@ -2,6 +2,7 @@ import { useEffect, useState, type FormEvent } from 'react'
 import { ApiError } from '../auth/api'
 import type { Lookup, StudentProfile } from '../auth/types'
 import { useAuth } from '../auth/useAuth'
+import { toast } from 'sonner'
 
 const inputClass = 'mt-2 min-h-12 w-full rounded-xl border border-white/15 bg-slate-950 px-4 py-3 text-white'
 
@@ -15,8 +16,7 @@ export function ProfilePage() {
   const [technologies, setTechnologies] = useState('')
   const [skillIds, setSkillIds] = useState<string[]>([])
   const [interestIds, setInterestIds] = useState<string[]>([])
-  const [message, setMessage] = useState<string | null>(null)
-  const [error, setError] = useState<string | null>(null)
+  const [loadError, setLoadError] = useState<string | null>(null)
 
   useEffect(() => {
     Promise.all([
@@ -32,7 +32,7 @@ export function ProfilePage() {
       setTechnologies(loadedProfile.preferredTechnologies.join(', '))
       setSkillIds(loadedProfile.skills.map((item) => item.id))
       setInterestIds(loadedProfile.interests.map((item) => item.id))
-    }).catch(() => setError('Unable to load your profile.'))
+    }).catch(() => setLoadError('Unable to load your profile.'))
   }, [authenticatedRequest])
 
   function toggle(id: string, values: string[], setter: (value: string[]) => void) {
@@ -41,8 +41,6 @@ export function ProfilePage() {
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
-    setError(null)
-    setMessage(null)
     try {
       const updated = await authenticatedRequest<StudentProfile>('/api/profile', {
         method: 'PUT',
@@ -55,9 +53,9 @@ export function ProfilePage() {
         }),
       })
       setProfile(updated)
-      setMessage('Profile saved successfully.')
+      toast.success('Profile saved successfully.')
     } catch (caught) {
-      setError(caught instanceof ApiError ? caught.message : 'Unable to save your profile.')
+      toast.error(caught instanceof ApiError ? caught.message : 'Unable to save your profile.')
     }
   }
 
@@ -65,7 +63,7 @@ export function ProfilePage() {
     <main className="mx-auto min-h-[65vh] max-w-4xl px-5 py-10 sm:px-8 sm:py-14">
       <p className="text-sm font-bold uppercase tracking-[0.18em] text-cyan-300">Student profile</p>
       <div className="mt-3 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-        <div><h1 className="text-4xl font-black tracking-tight">Show what you bring</h1><p className="mt-3 text-slate-300">Skills and interests power later project recommendations.</p></div>
+        <div><h1 className="text-4xl font-black tracking-tight">{profile ? `${profile.firstName} ${profile.lastName}` : 'Show what you bring'}</h1><p className="mt-3 text-slate-300">Skills and interests power later project recommendations.</p></div>
         <div className="rounded-xl border border-cyan-300/30 bg-cyan-300/10 px-4 py-3 font-bold text-cyan-200">
           {profile?.completenessPercent ?? 0}% complete
         </div>
@@ -75,6 +73,7 @@ export function ProfilePage() {
           Complete: {profile.missingFields.join(', ')}.
         </p>
       )}
+      {loadError && <p className="mt-6 rounded-xl border border-red-300/30 bg-red-400/10 p-4 text-red-200" role="alert">{loadError}</p>}
       <form className="mt-8 grid gap-7 rounded-2xl border border-white/10 bg-white/[0.05] p-5 sm:p-8" onSubmit={handleSubmit}>
         <label className="font-semibold">Experience level
           <select className={inputClass} value={level} onChange={(event) => setLevel(event.target.value)}>
@@ -94,8 +93,6 @@ export function ProfilePage() {
         <fieldset><legend className="font-semibold">Interests</legend><div className="mt-3 grid gap-3 sm:grid-cols-2">
           {interests.map((item) => <label className="flex min-h-12 items-center gap-3 rounded-xl border border-white/10 bg-slate-950 px-4" key={item.id}><input checked={interestIds.includes(item.id)} type="checkbox" onChange={() => toggle(item.id, interestIds, setInterestIds)} />{item.name}</label>)}
         </div></fieldset>
-        {error && <p className="rounded-xl border border-red-300/30 bg-red-400/10 p-4 text-red-200" role="alert">{error}</p>}
-        {message && <p className="rounded-xl border border-emerald-300/30 bg-emerald-400/10 p-4 text-emerald-200" role="status">{message}</p>}
         <button className="min-h-12 rounded-xl bg-cyan-400 px-5 py-3 font-bold text-slate-950 hover:bg-cyan-300" type="submit">Save profile</button>
       </form>
     </main>

@@ -56,7 +56,7 @@ the Railway deployment artifact. Run these commands from the repository root.
    migrations at startup. `DemoSeed__Enabled=true` creates the configured Admin if
    it does not exist and seeds a small lookup/project catalog plus two complete
    Student profiles (`demo-student1@skillmatch.local` and
-   `demo-student2@skillmatch.local`). The demo Students use the same externally
+   `demo-student2@skillmatch.local`) with presentation-safe full names. The demo Students use the same externally
    configured demo password; no password is hard-coded. Add the backend-only
    `OPENAI_API_KEY`, `OPENAI_MODEL=gpt-5-mini`, and optional
    `OPENAI_TIMEOUT_SECONDS=15` values for live recommendation explanations.
@@ -83,12 +83,13 @@ the Railway deployment artifact. Run these commands from the repository root.
 5. Exercise authentication through the container (replace the example credentials):
 
    ```powershell
-   $student = Invoke-RestMethod -Method Post -Uri http://localhost:5227/api/auth/register -ContentType 'application/json' -Body '{"email":"student@example.edu","password":"Choose-A-Student-Password"}'
+   $student = Invoke-RestMethod -Method Post -Uri http://localhost:5227/api/auth/register -ContentType 'application/json' -Body '{"firstName":"Ada","lastName":"Lovelace","email":"student@example.edu","password":"Choose-A-Student-Password"}'
    Invoke-RestMethod -Uri http://localhost:5227/api/auth/me -Headers @{ Authorization = "Bearer $($student.token)" }
    Invoke-WebRequest -SkipHttpErrorCheck -Uri http://localhost:5227/api/admin/auth-check -Headers @{ Authorization = "Bearer $($student.token)" }
    ```
 
-   Registration must return a `Student`; `/api/auth/me` must return that Student;
+   Registration requires first name, last name, email, and password and must return a
+   `Student`; `/api/auth/me` must return that Student and their names;
    the Admin endpoint must return HTTP 403 for the Student token. Login is
    `POST /api/auth/login` with the same email/password JSON shape.
 
@@ -233,7 +234,8 @@ dotnet ef migrations add <MigrationName> --project .\SKillMatchBE --startup-proj
 
 The health endpoint returns HTTP 200 when PostgreSQL is reachable and HTTP 503
 otherwise. Unknown routes and unhandled API errors use Problem Details JSON with a
-trace ID. Public registration always creates a Student account. Passwords are stored
+trace ID. Public registration always creates a Student account and requires bounded
+first and last names. Email remains the normalized unique login credential. Passwords are stored
 with ASP.NET Core Identity-compatible hashing; JWTs expire and carry the server-side
 Student/Admin role used by authorization policies.
 
@@ -243,6 +245,10 @@ only receive published projects; unpublished and closed projects return 404 from
 the student detail endpoint. My Work preserves existing applications and decisions
 for a closed project, labels it **Project closed**, and does not show a working-looking
 detail link. Admin notes are present only in Admin project responses.
+Ordinary application, team, member/leader selection, profile, dashboard, and
+navigation labels use full names rather than email addresses. Intentionally opaque
+teammate recommendations remain anonymous. User-triggered mutations report
+closable success/error toasts; field validation and page-load failures remain inline.
 Project titles and lookup names are unique without regard to case. Projects require
 at least one skill and team sizes ordered as minimum ≤ preferred ≤ maximum. Only
 Draft projects can be deleted; publish or close projects through the status endpoint.
@@ -365,6 +371,13 @@ public HTTPS domain to that container port. The same double-underscore configura
 names work unchanged in local Docker and Railway. The API remains a single-instance
 deployment for startup migration execution; migrate separately before scaling beyond
 one instance.
+
+The `AddUserNames` startup migration safely handles existing Railway accounts by
+adding nullable name columns, deriving display names from the email local part, and
+then making the columns required. For example, `jane.doe@example.edu` becomes
+`Jane Doe`; a local part with no separator uses `User` as the last name. The
+migration does not modify email, password hashes, roles, or relationships, so email
+remains the unique login credential.
 
 ## Troubleshooting
 

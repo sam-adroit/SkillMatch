@@ -7,14 +7,17 @@ import {
   inputClassName,
   primaryButtonClassName,
 } from '../components/AuthPageLayout'
+import { toast } from 'sonner'
 
 export function RegisterPage() {
   const { user, register } = useAuth()
   const navigate = useNavigate()
+  const [firstName, setFirstName] = useState('')
+  const [lastName, setLastName] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [confirmation, setConfirmation] = useState('')
-  const [error, setError] = useState<string | null>(null)
+  const [validationError, setValidationError] = useState<string | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
 
   if (user) {
@@ -23,20 +26,21 @@ export function RegisterPage() {
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
-    setError(null)
+    setValidationError(null)
 
     if (password !== confirmation) {
-      setError('Passwords must match.')
+      setValidationError('Passwords must match.')
       return
     }
 
     setIsSubmitting(true)
 
     try {
-      await register(email, password)
+      await register(firstName, lastName, email, password)
+      toast.success(`Welcome, ${firstName.trim()}! Your Student account is ready.`)
       navigate('/dashboard', { replace: true })
     } catch (caughtError) {
-      setError(
+      toast.error(
         caughtError instanceof ApiError
           ? caughtError.message
           : 'Unable to create your account right now. Please try again.',
@@ -53,6 +57,38 @@ export function RegisterPage() {
       description="Public registration always creates a Student account."
     >
       <form className="grid gap-5" onSubmit={handleSubmit}>
+        <div className="grid gap-5 sm:grid-cols-2">
+          <div>
+            <label className="font-semibold text-slate-200" htmlFor="register-first-name">
+              First name
+            </label>
+            <input
+              autoComplete="given-name"
+              className={inputClassName}
+              id="register-first-name"
+              maxLength={100}
+              name="firstName"
+              required
+              value={firstName}
+              onChange={(event) => setFirstName(event.target.value)}
+            />
+          </div>
+          <div>
+            <label className="font-semibold text-slate-200" htmlFor="register-last-name">
+              Last name
+            </label>
+            <input
+              autoComplete="family-name"
+              className={inputClassName}
+              id="register-last-name"
+              maxLength={100}
+              name="lastName"
+              required
+              value={lastName}
+              onChange={(event) => setLastName(event.target.value)}
+            />
+          </div>
+        </div>
         <div>
           <label className="font-semibold text-slate-200" htmlFor="register-email">
             Email address
@@ -103,9 +139,9 @@ export function RegisterPage() {
           />
         </div>
 
-        {error && (
+        {validationError && (
           <p className="rounded-xl border border-red-300/30 bg-red-400/10 px-4 py-3 text-sm text-red-200" role="alert">
-            {error}
+            {validationError}
           </p>
         )}
 

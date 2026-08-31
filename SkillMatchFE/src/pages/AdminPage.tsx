@@ -3,6 +3,7 @@ import { ApiError } from '../auth/api'
 import type { AdminProject, Lookup } from '../auth/types'
 import { useAuth } from '../auth/useAuth'
 import { Link } from 'react-router-dom'
+import { toast } from 'sonner'
 
 type LookupKind = 'skills' | 'interests' | 'categories'
 const inputClass = 'min-h-12 w-full rounded-xl border border-white/15 bg-slate-950 px-4 py-3 text-white'
@@ -15,8 +16,7 @@ export function AdminPage() {
   const [lookupNames, setLookupNames] = useState<Record<LookupKind, string>>({ skills: '', interests: '', categories: '' })
   const [editingId, setEditingId] = useState<string | null>(null)
   const [form, setForm] = useState(emptyForm)
-  const [message, setMessage] = useState<string | null>(null)
-  const [error, setError] = useState<string | null>(null)
+  const [loadError, setLoadError] = useState<string | null>(null)
 
   const load = useCallback(async () => {
     try {
@@ -26,33 +26,33 @@ export function AdminPage() {
       ])
       setLookups({ skills, interests, categories }); setProjects(loadedProjects)
       setForm((current) => current.categoryId || categories.length === 0 ? current : { ...current, categoryId: categories[0].id })
-    } catch { setError('Unable to load the admin workspace.') }
+    } catch { setLoadError('Unable to load the admin workspace.') }
   }, [authenticatedRequest])
 
   useEffect(() => { void load() }, [load])
 
   function showError(caught: unknown, fallback: string) {
-    setMessage(null); setError(caught instanceof ApiError ? caught.message : fallback)
+    toast.error(caught instanceof ApiError ? caught.message : fallback)
   }
 
   async function createLookup(kind: LookupKind, event: FormEvent<HTMLFormElement>) {
-    event.preventDefault(); setError(null); setMessage(null)
+    event.preventDefault()
     try {
       await authenticatedRequest<Lookup>(`/api/admin/${kind}`, { method: 'POST', body: JSON.stringify({ name: lookupNames[kind] }) })
-      setLookupNames((current) => ({ ...current, [kind]: '' })); setMessage('Lookup added.'); await load()
+      setLookupNames((current) => ({ ...current, [kind]: '' })); toast.success('Lookup added.'); await load()
     } catch (caught) { showError(caught, 'Unable to add the lookup.') }
   }
 
   async function renameLookup(kind: LookupKind, item: Lookup) {
     const name = window.prompt(`Rename ${item.name}`, item.name)
     if (!name || name.trim() === item.name) return
-    try { await authenticatedRequest(`/api/admin/${kind}/${item.id}`, { method: 'PUT', body: JSON.stringify({ name }) }); setMessage('Lookup renamed.'); await load() }
+    try { await authenticatedRequest(`/api/admin/${kind}/${item.id}`, { method: 'PUT', body: JSON.stringify({ name }) }); toast.success('Lookup renamed.'); await load() }
     catch (caught) { showError(caught, 'Unable to rename the lookup.') }
   }
 
   async function deleteLookup(kind: LookupKind, item: Lookup) {
     if (!window.confirm(`Delete ${item.name}?`)) return
-    try { await authenticatedRequest(`/api/admin/${kind}/${item.id}`, { method: 'DELETE' }); setMessage('Lookup deleted.'); await load() }
+    try { await authenticatedRequest(`/api/admin/${kind}/${item.id}`, { method: 'DELETE' }); toast.success('Lookup deleted.'); await load() }
     catch (caught) { showError(caught, 'Unable to delete the lookup.') }
   }
 
@@ -61,10 +61,10 @@ export function AdminPage() {
   }
 
   async function saveProject(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault(); setError(null); setMessage(null)
+    event.preventDefault()
     try {
       await authenticatedRequest(editingId ? `/api/admin/projects/${editingId}` : '/api/admin/projects', { method: editingId ? 'PUT' : 'POST', body: JSON.stringify(form) })
-      setMessage(editingId ? 'Project updated.' : 'Draft project created.'); setEditingId(null); setForm({ ...emptyForm, categoryId: lookups.categories[0]?.id ?? '' }); await load()
+      toast.success(editingId ? 'Project updated.' : 'Draft project created.'); setEditingId(null); setForm({ ...emptyForm, categoryId: lookups.categories[0]?.id ?? '' }); await load()
     } catch (caught) { showError(caught, 'Unable to save the project.') }
   }
 
@@ -75,13 +75,13 @@ export function AdminPage() {
   }
 
   async function statusProject(id: string, status: 'Published' | 'Closed') {
-    try { await authenticatedRequest(`/api/admin/projects/${id}/status`, { method: 'PATCH', body: JSON.stringify({ status }) }); setMessage(`Project ${status.toLowerCase()}.`); await load() }
+    try { await authenticatedRequest(`/api/admin/projects/${id}/status`, { method: 'PATCH', body: JSON.stringify({ status }) }); toast.success(`Project ${status.toLowerCase()}.`); await load() }
     catch (caught) { showError(caught, `Unable to mark the project ${status.toLowerCase()}.`) }
   }
 
   async function deleteProject(id: string) {
     if (!window.confirm('Delete this draft project?')) return
-    try { await authenticatedRequest(`/api/admin/projects/${id}`, { method: 'DELETE' }); setMessage('Draft project deleted.'); await load() }
+    try { await authenticatedRequest(`/api/admin/projects/${id}`, { method: 'DELETE' }); toast.success('Draft project deleted.'); await load() }
     catch (caught) { showError(caught, 'Unable to delete the project.') }
   }
 
@@ -89,8 +89,7 @@ export function AdminPage() {
     <main className="mx-auto min-h-[65vh] max-w-6xl px-5 py-10 sm:px-8 sm:py-14">
       <p className="text-sm font-bold uppercase tracking-[0.18em] text-cyan-300">Admin only</p><h1 className="mt-3 text-4xl font-black tracking-tight">Catalog and project workspace</h1>
       <Link className="mt-6 inline-flex min-h-12 items-center rounded-xl bg-violet-400 px-5 font-bold text-slate-950 hover:bg-violet-300" to="/admin/workflows">Open applications, teams, and dashboard</Link>
-      {error && <p className="mt-6 rounded-xl border border-red-300/30 bg-red-400/10 p-4 text-red-200" role="alert">{error}</p>}
-      {message && <p className="mt-6 rounded-xl border border-emerald-300/30 bg-emerald-400/10 p-4 text-emerald-200" role="status">{message}</p>}
+      {loadError && <p className="mt-6 rounded-xl border border-red-300/30 bg-red-400/10 p-4 text-red-200" role="alert">{loadError}</p>}
 
       <section className="mt-8 rounded-2xl border border-white/10 bg-white/[0.05] p-5 sm:p-8"><h2 className="text-2xl font-black">{editingId ? 'Edit project' : 'Create a draft project'}</h2>
         <form className="mt-5 grid gap-4 md:grid-cols-2" onSubmit={saveProject}>

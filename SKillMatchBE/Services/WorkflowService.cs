@@ -165,13 +165,13 @@ public sealed class WorkflowService(
     }
 
     private static ApplicationResponse Map(ProjectApplication item) => new(
-        item.Id, item.StudentId, item.Student.Email, item.ProjectId, item.Project.Title,
+        item.Id, item.StudentId, $"{item.Student.FirstName} {item.Student.LastName}", item.ProjectId, item.Project.Title,
         item.Project.Status.ToString(), item.Note, item.Status.ToString(), item.AppliedAt,
         item.DecidedAt, item.DecisionNote);
 
     private static TeamResponse Map(Team item) => new(
         item.Id, item.ProjectId, item.Project.Title, item.Name, item.Status.ToString(), item.Project.MaximumTeamSize,
-        item.Members.OrderBy(member => member.Student.Email).Select(member =>
-            new TeamMemberResponse(member.StudentId, member.Student.Email, member.StudentId == item.LeaderStudentId, member.JoinedAt)).ToArray(),
+        item.Members.OrderBy(member => member.Student.LastName).ThenBy(member => member.Student.FirstName).Select(member =>
+            new TeamMemberResponse(member.StudentId, $"{member.Student.FirstName} {member.Student.LastName}", member.StudentId == item.LeaderStudentId, member.JoinedAt)).ToArray(),
         item.CreatedAt, item.UpdatedAt);
 }

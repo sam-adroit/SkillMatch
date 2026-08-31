@@ -19,7 +19,7 @@ public sealed class ProfileService(
         var user = await users.FindByIdAsync(userId, cancellationToken);
         return user is null
             ? null
-            : new StudentProfileResponse(user.Id, user.Email, string.Empty, string.Empty, [], [], [], 0,
+            : new StudentProfileResponse(user.Id, user.FirstName, user.LastName, user.Email, string.Empty, string.Empty, [], [], [], 0,
                 ["Experience level", "Goals", "Preferred technologies", "Skills", "Interests"], null);
     }
 
@@ -78,6 +78,8 @@ public sealed class ProfileService(
 
         return new StudentProfileResponse(
             profile.UserId,
+            profile.User.FirstName,
+            profile.User.LastName,
             profile.User.Email,
             profile.ExperienceLevel.ToString(),
             profile.Goals,

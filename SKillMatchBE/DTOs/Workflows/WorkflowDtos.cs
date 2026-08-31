@@ -13,7 +13,7 @@ public sealed record ApplicationQuery(string? Status, Guid? ProjectId);
 public sealed record ApplicationResponse(
     Guid Id,
     Guid StudentId,
-    string StudentEmail,
+    string StudentName,
     Guid ProjectId,
     string ProjectTitle,
     string ProjectStatus,
@@ -34,7 +34,7 @@ public sealed record UpdateTeamRequest(
     Guid LeaderStudentId,
     [Required, MinLength(1)] IReadOnlyList<Guid> MemberStudentIds);
 
-public sealed record TeamMemberResponse(Guid StudentId, string Email, bool IsLeader, DateTimeOffset JoinedAt);
+public sealed record TeamMemberResponse(Guid StudentId, string Name, bool IsLeader, DateTimeOffset JoinedAt);
 
 public sealed record TeamResponse(
     Guid Id,

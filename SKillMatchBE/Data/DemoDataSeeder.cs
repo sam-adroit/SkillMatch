@@ -34,12 +34,16 @@ public sealed class DemoDataSeeder(
                 throw new InvalidOperationException(
                     "The configured demo Admin email belongs to a non-Admin account.");
             }
-
+            existing.FirstName = "SkillMatch";
+            existing.LastName = "Admin";
+            await users.UpdateAsync(existing, cancellationToken);
         }
         else
         {
             var admin = new ApplicationUser
             {
+                FirstName = "SkillMatch",
+                LastName = "Admin",
                 Email = email,
                 NormalizedEmail = normalizedEmail,
                 PasswordHash = string.Empty,
@@ -111,14 +115,21 @@ public sealed class DemoDataSeeder(
     {
         var skills = database.Skills.OrderBy(item => item.Name).Take(2).ToArray();
         var interests = database.Interests.OrderBy(item => item.Name).Take(2).ToArray();
-        foreach (var email in new[] { "demo-student1@skillmatch.local", "demo-student2@skillmatch.local" })
+        foreach (var demoStudent in new[]
         {
+            new { Email = "demo-student1@skillmatch.local", FirstName = "Demo", LastName = "Student One" },
+            new { Email = "demo-student2@skillmatch.local", FirstName = "Demo", LastName = "Student Two" }
+        })
+        {
+            var email = demoStudent.Email;
             var normalized = AuthService.NormalizeEmail(email);
             var student = await users.FindByNormalizedEmailAsync(normalized, cancellationToken);
             if (student is null)
             {
                 student = new ApplicationUser
                 {
+                    FirstName = demoStudent.FirstName,
+                    LastName = demoStudent.LastName,
                     Email = email,
                     NormalizedEmail = normalized,
                     PasswordHash = string.Empty,
@@ -131,6 +142,9 @@ public sealed class DemoDataSeeder(
             }
             if (student.Role != UserRole.Student)
                 throw new InvalidOperationException($"The demo Student email {email} belongs to a non-Student account.");
+            student.FirstName = demoStudent.FirstName;
+            student.LastName = demoStudent.LastName;
+            await users.UpdateAsync(student, cancellationToken);
             if (await database.StudentProfiles.AnyAsync(item => item.UserId == student.Id, cancellationToken))
                 continue;
 

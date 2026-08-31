@@ -1,6 +1,8 @@
 # SkillMatch frontend
 
 React 19, TypeScript, Vite, and Tailwind CSS power the SkillMatch web interface.
+The lightweight `sonner` package supplies one global accessible toaster with
+closable, automatically expiring success/error notifications.
 
 From the repository root:
 
@@ -31,6 +33,12 @@ dashboard with team skill coverage at `/admin/workflows`. Recommendation cards
 label live `AI generated` and deterministic `Fallback` results distinctly. The
 browser never receives an OpenAI key. The API enforces every role and workflow rule; UI
 visibility is not treated as authorization.
+
+Registration collects required first and last names while email remains the login
+credential. Navigation, profile, application, team, member-selection, and
+leader-selection UI uses full names instead of email. Teammate recommendations stay
+intentionally anonymous. Mutation results use toasts; inline field validation and
+persistent page-loading errors remain in their page context.
 
 Usage and presentation references:
 

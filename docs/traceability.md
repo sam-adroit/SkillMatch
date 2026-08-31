@@ -36,10 +36,11 @@ is not treated as enforcement.
 
 ## Approved or documented simplifications
 
-1. **Profile fields:** The SRS mentions name, program, availability, and bio. The
-   implemented matching profile uses account email, experience level, goals,
+1. **Profile fields:** The implementation now stores required account first/last
+   names and uses experience level, goals,
    preferred technologies, skills, and interests - the smallest field set required
-   by the approved product requirements.
+   by the approved product requirements. Program, availability, and a separate bio
+   remain simplified out.
 2. **Team control:** Although the SRS describes Student/Admin team creation and
    invitations, this release makes membership Admin-controlled with a designated
    Student leader. Student invitations are out of scope.

@@ -35,6 +35,20 @@ public sealed class AuthenticationApiTests : IClassFixture<AuthenticationApiFact
         Assert.Equal("application/problem+json", response.Content.Headers.ContentType?.MediaType);
     }
 
+    [Fact]
+    public async Task Register_RequiresFirstAndLastName()
+    {
+        using var client = factory.CreateClient();
+        using var response = await client.PostAsJsonAsync(
+            "/api/auth/register",
+            new { firstName = "", lastName = "", email = "new@example.edu", password = "correct-horse-battery" });
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        var body = await response.Content.ReadAsStringAsync();
+        Assert.Contains("FirstName", body);
+        Assert.Contains("LastName", body);
+    }
+
     [Theory]
     [InlineData("not-a-jwt")]
     public async Task InvalidToken_CannotAccessCurrentUser(string token)
@@ -65,6 +79,8 @@ public sealed class AuthenticationApiTests : IClassFixture<AuthenticationApiFact
         response.EnsureSuccessStatusCode();
         var user = await response.Content.ReadFromJsonAsync<CurrentUserResponse>();
         Assert.Equal("Student", user?.Role);
+        Assert.Equal("Test", user?.FirstName);
+        Assert.Equal("User", user?.LastName);
     }
 
     [Fact]
@@ -220,6 +236,8 @@ public sealed class AuthenticationApiFactory : WebApplicationFactory<Program>
         return service.CreateToken(new ApplicationUser
         {
             Id = UserId,
+            FirstName = "Test",
+            LastName = "User",
             Email = "user@example.edu",
             NormalizedEmail = "USER@EXAMPLE.EDU",
             PasswordHash = "unused",
@@ -239,7 +257,7 @@ public sealed class AuthenticationApiFactory : WebApplicationFactory<Program>
         public Task<CurrentUserResponse?> GetCurrentUserAsync(Guid id, CancellationToken cancellationToken)
         {
             CurrentUserResponse? response = id == userId
-                ? new CurrentUserResponse(id, "user@example.edu", "Student")
+                ? new CurrentUserResponse(id, "Test", "User", "user@example.edu", "Student")
                 : null;
             return Task.FromResult(response);
         }

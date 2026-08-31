@@ -31,6 +31,16 @@ canonical `SKillMatchBE/Dockerfile`; Web deployment
 `4901f7c6-5526-4319-9538-e09c5b3f8e0f` also reached `SUCCESS`. The snapshot was
 removed after deployment and did not stage or push source changes.
 
+Plan 008 was likewise deployed for pre-approval verification without staging or
+pushing. API deployment `d71318d8-40ee-4ecb-91ea-ced208f63acb` (`SUCCESS`) used
+`/SKillMatchBE/Dockerfile` and image digest
+`sha256:00fcad8743759b9911f5a81c8cc5c2b6f065892c6b998ccdc1d37fd5e67b4f5a`.
+Web deployment `74eba142-4682-4792-9682-321a938918e7` (`SUCCESS`) used Railpack's
+Vite static-site pipeline and image digest
+`sha256:43c49c19d742c5fbfc27a428bc9485a163e9b1d28001c38de038275ed84ea0ea`.
+Production migration history includes `20260830200623_AddUserNames`; all 9 users
+have required names and an existing account retained its email login.
+
 Production configuration verification:
 
 - `Database__ApplyMigrations=true` with one API replica; no migration remained.

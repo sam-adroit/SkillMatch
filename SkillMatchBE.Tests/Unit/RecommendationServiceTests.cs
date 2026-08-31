@@ -158,6 +158,8 @@ public sealed class RecommendationServiceTests
         var user = new ApplicationUser
         {
             Id = id,
+            FirstName = "Private",
+            LastName = "Student",
             Email = $"private-{id:N}@example.edu",
             NormalizedEmail = $"PRIVATE-{id:N}@EXAMPLE.EDU",
             PasswordHash = "private-password-hash",

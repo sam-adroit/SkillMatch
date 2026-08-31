@@ -1,6 +1,6 @@
 # SkillMatch diagrams
 
-These diagrams describe the implementation at the end of Plan 005. Mermaid source
+These diagrams describe the current implementation. Mermaid source
 is authoritative; the adjacent SVG files are generated presentation artifacts.
 
 | Diagram | Source | Export |

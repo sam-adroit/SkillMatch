@@ -2,6 +2,8 @@ export type UserRole = 'Student' | 'Admin'
 
 export type CurrentUser = {
   id: string
+  firstName: string
+  lastName: string
   email: string
   role: UserRole
 }
@@ -21,6 +23,8 @@ export type Lookup = { id: string; name: string }
 
 export type StudentProfile = {
   userId: string
+  firstName: string
+  lastName: string
   email: string
   experienceLevel: string
   goals: string
@@ -52,7 +56,7 @@ export type AdminProject = Project & { adminNotes: string }
 export type ProjectApplication = {
   id: string
   studentId: string
-  studentEmail: string
+  studentName: string
   projectId: string
   projectTitle: string
   projectStatus: 'Draft' | 'Published' | 'Closed'
@@ -63,7 +67,7 @@ export type ProjectApplication = {
   decisionNote: string
 }
 
-export type TeamMember = { studentId: string; email: string; isLeader: boolean; joinedAt: string }
+export type TeamMember = { studentId: string; name: string; isLeader: boolean; joinedAt: string }
 
 export type Team = {
   id: string

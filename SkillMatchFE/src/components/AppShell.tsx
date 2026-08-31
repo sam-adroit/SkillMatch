@@ -1,5 +1,6 @@
 import { Link, NavLink, Outlet, useNavigate } from 'react-router-dom'
 import { useAuth } from '../auth/useAuth'
+import { toast } from 'sonner'
 
 const navLinkClass = ({ isActive }: { isActive: boolean }) =>
   `block rounded-lg px-3 py-2 transition ${
@@ -13,6 +14,7 @@ export function AppShell() {
   function handleLogout() {
     logout()
     navigate('/login')
+    toast.success('You have been logged out.')
   }
 
   return (
@@ -69,6 +71,9 @@ export function AppShell() {
                       </NavLink>
                     </li>
                   )}
+                  <li className="px-3 py-2 text-sm font-bold text-cyan-200">
+                    {user.firstName} {user.lastName}
+                  </li>
                   <li>
                     <button
                       className="min-h-10 rounded-lg px-3 py-2 text-slate-300 hover:bg-white/10"

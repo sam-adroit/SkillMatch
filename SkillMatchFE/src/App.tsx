@@ -14,11 +14,13 @@ import { RegisterPage } from './pages/RegisterPage'
 import { MyWorkPage } from './pages/MyWorkPage'
 import { AdminWorkflowPage } from './pages/AdminWorkflowPage'
 import { RecommendationsPage } from './pages/RecommendationsPage'
+import { Toaster } from 'sonner'
 
 function App() {
   return (
     <BrowserRouter>
       <AuthProvider>
+        <Toaster closeButton duration={4000} position="top-right" richColors />
         <Routes>
           <Route element={<AppShell />}>
             <Route index element={<HomePage />} />

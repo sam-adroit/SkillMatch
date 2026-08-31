@@ -23,6 +23,8 @@ public sealed class SkillMatchDbContext(DbContextOptions<SkillMatchDbContext> op
 
         user.ToTable("Users");
         user.HasKey(item => item.Id);
+        user.Property(item => item.FirstName).HasMaxLength(100).IsRequired();
+        user.Property(item => item.LastName).HasMaxLength(100).IsRequired();
         user.Property(item => item.Email).HasMaxLength(254).IsRequired();
         user.Property(item => item.NormalizedEmail).HasMaxLength(254).IsRequired();
         user.Property(item => item.PasswordHash).HasMaxLength(512).IsRequired();

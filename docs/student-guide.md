@@ -7,7 +7,8 @@ runtime configuration.
 
 ## Sign in and complete the profile
 
-1. Select **Log in**, enter the Student email/password, and submit.
+1. Select **Log in**, enter the Student email/password, and submit. Email remains
+   the login credential, while the signed-in navigation and profile show the full name.
 2. Open **Profile**.
 3. Choose an experience level, write goals of at least 10 characters, add at least
    one preferred technology, skill, and interest, then save.
@@ -41,7 +42,7 @@ runtime configuration.
 1. Open **My work** to review application decisions and active team membership.
    If a project was closed after the application, its application and decision
    history remain visible with a **Project closed** label and no project-detail link.
-2. For an assigned team, confirm its name, leader, members, project, and covered or
+2. For an assigned team, confirm its name, leader, full-name member labels, project, and covered or
    missing required skills.
 3. Students may view only their own team data. Team creation and membership changes
    are Admin-controlled in this release.

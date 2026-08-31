@@ -26,6 +26,8 @@ public sealed class AuthService(
 
         var user = new ApplicationUser
         {
+            FirstName = request.FirstName.Trim(),
+            LastName = request.LastName.Trim(),
             Email = email,
             NormalizedEmail = normalizedEmail,
             PasswordHash = string.Empty,
@@ -91,5 +93,5 @@ public sealed class AuthService(
     }
 
     private static CurrentUserResponse MapUser(ApplicationUser user) =>
-        new(user.Id, user.Email, user.Role.ToString());
+        new(user.Id, user.FirstName, user.LastName, user.Email, user.Role.ToString());
 }

@@ -7,6 +7,7 @@ import type {
   TeammateSuggestion,
 } from '../auth/types'
 import { useAuth } from '../auth/useAuth'
+import { toast } from 'sonner'
 
 function skillList(label: string, values: string[], tone: string) {
   return <div><p className="text-sm font-bold text-slate-300">{label}</p><div className="mt-2 flex flex-wrap gap-2">
@@ -21,7 +22,7 @@ export function RecommendationsPage() {
   const [teammates, setTeammates] = useState<TeammateSuggestion[]>([])
   const [loading, setLoading] = useState(true)
   const [generating, setGenerating] = useState(false)
-  const [error, setError] = useState<string | null>(null)
+  const [loadError, setLoadError] = useState<string | null>(null)
 
   const loadSupportingResults = useCallback(async () => {
     const [savedHistory, suggestions] = await Promise.all([
@@ -34,18 +35,19 @@ export function RecommendationsPage() {
 
   useEffect(() => {
     loadSupportingResults()
-      .catch((caught) => setError(caught instanceof ApiError ? caught.message : 'Unable to load recommendation history and teammate suggestions.'))
+      .catch((caught) => setLoadError(caught instanceof ApiError ? caught.message : 'Unable to load recommendation history and teammate suggestions.'))
       .finally(() => setLoading(false))
   }, [loadSupportingResults])
 
   async function generate() {
-    setGenerating(true); setError(null)
+    setGenerating(true)
     try {
       const result = await authenticatedRequest<RecommendationBatch>('/api/recommendations/projects', { method: 'POST' })
       setBatch(result)
       setHistory(await authenticatedRequest<RecommendationHistory[]>('/api/recommendations/history'))
+      toast.success(result.providerStatus === 'Fallback' ? 'Fallback recommendations are ready.' : 'Recommendations generated successfully.')
     } catch (caught) {
-      setError(caught instanceof ApiError ? caught.message : 'Unable to generate recommendations right now.')
+      toast.error(caught instanceof ApiError ? caught.message : 'Unable to generate recommendations right now.')
     } finally { setGenerating(false) }
   }
 
@@ -56,7 +58,7 @@ export function RecommendationsPage() {
       <button className="min-h-12 shrink-0 rounded-xl bg-cyan-400 px-5 font-black text-slate-950 disabled:cursor-not-allowed disabled:opacity-60" disabled={generating} onClick={() => void generate()}>{generating ? 'Generating…' : 'Generate recommendations'}</button>
     </div>
     {loading && <p className="mt-8" role="status">Loading recommendation workspace…</p>}
-    {error && <p className="mt-6 rounded-xl border border-red-300/30 bg-red-400/10 p-4 text-red-200" role="alert">{error} <Link className="font-bold underline" to="/profile">Review profile</Link></p>}
+    {loadError && <p className="mt-6 rounded-xl border border-red-300/30 bg-red-400/10 p-4 text-red-200" role="alert">{loadError} <Link className="font-bold underline" to="/profile">Review profile</Link></p>}
     {batch?.providerStatus === 'Fallback' && <p className="mt-6 rounded-xl border border-amber-300/30 bg-amber-400/10 p-4 text-amber-100" role="status"><strong>Fallback mode:</strong> OpenAI was unavailable, so these explanations are deterministic. Project browsing, applications, and teams still work.</p>}
     {batch?.providerStatus === 'AiGenerated' && <p className="mt-6 rounded-xl border border-emerald-300/30 bg-emerald-400/10 p-4 text-emerald-100" role="status"><strong>AI-generated explanations ready.</strong>{batch.reused ? ' Reused because your profile and the ranked projects have not changed.' : ' A new result was saved to your history.'}</p>}
 

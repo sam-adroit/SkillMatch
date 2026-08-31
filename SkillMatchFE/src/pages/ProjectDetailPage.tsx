@@ -3,47 +3,47 @@ import { Link, useParams } from 'react-router-dom'
 import { ApiError } from '../auth/api'
 import type { Project, ProjectApplication } from '../auth/types'
 import { useAuth } from '../auth/useAuth'
+import { toast } from 'sonner'
 
 export function ProjectDetailPage() {
   const { projectId } = useParams()
   const { authenticatedRequest, user } = useAuth()
   const [project, setProject] = useState<Project | null>(null)
-  const [error, setError] = useState<string | null>(null)
+  const [loadError, setLoadError] = useState<string | null>(null)
   const [application, setApplication] = useState<ProjectApplication | null>(null)
   const [note, setNote] = useState('')
-  const [message, setMessage] = useState<string | null>(null)
 
   useEffect(() => {
     if (!projectId) return
     authenticatedRequest<Project>(`/api/projects/${projectId}`)
       .then(setProject)
-      .catch(() => setError('This project is unavailable or has not been published.'))
+      .catch(() => setLoadError('This project is unavailable or has not been published.'))
   }, [authenticatedRequest, projectId])
 
   useEffect(() => {
     if (!projectId || user?.role !== 'Student') return
     authenticatedRequest<ProjectApplication[]>('/api/applications')
       .then((items) => setApplication(items.find((item) => item.projectId === projectId) ?? null))
-      .catch(() => setError('Unable to load your application status.'))
+      .catch(() => setLoadError('Unable to load your application status.'))
   }, [authenticatedRequest, projectId, user?.role])
 
   async function apply(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault(); setError(null); setMessage(null)
+    event.preventDefault()
     try {
       const created = await authenticatedRequest<ProjectApplication>(`/api/projects/${projectId}/applications`, {
         method: 'POST', body: JSON.stringify({ note }),
       })
-      setApplication(created); setMessage('Application submitted successfully.')
+      setApplication(created); toast.success('Application submitted successfully.')
     } catch (caught) {
-      setError(caught instanceof ApiError ? caught.message : 'Unable to submit your application.')
+      toast.error(caught instanceof ApiError ? caught.message : 'Unable to submit your application.')
     }
   }
 
   return (
     <main className="mx-auto min-h-[65vh] max-w-4xl px-5 py-10 sm:px-8 sm:py-14">
       <Link className="font-bold text-cyan-300 hover:text-cyan-200" to="/projects">← Back to projects</Link>
-      {error && <p className="mt-8 rounded-xl border border-red-300/30 bg-red-400/10 p-4 text-red-200" role="alert">{error}</p>}
-      {!project && !error && <p className="mt-8" role="status">Loading project…</p>}
+      {loadError && <p className="mt-8 rounded-xl border border-red-300/30 bg-red-400/10 p-4 text-red-200" role="alert">{loadError}</p>}
+      {!project && !loadError && <p className="mt-8" role="status">Loading project…</p>}
       {project && <article className="mt-8 rounded-2xl border border-white/10 bg-white/[0.05] p-6 sm:p-9">
         <p className="text-sm font-bold uppercase tracking-[0.18em] text-cyan-300">{project.category.name} · {project.difficulty}</p>
         <h1 className="mt-3 text-4xl font-black tracking-tight">{project.title}</h1>
@@ -54,7 +54,6 @@ export function ProjectDetailPage() {
         {user?.role === 'Student' && <section className="mt-9 border-t border-white/10 pt-8"><h2 className="text-2xl font-black">Your application</h2>
           {application ? <div className="mt-4 rounded-xl border border-cyan-300/30 bg-cyan-300/10 p-5"><p className="font-bold text-cyan-100">Status: {application.status}</p>{application.note && <p className="mt-2 text-slate-300">{application.note}</p>}{application.decisionNote && <p className="mt-2 text-sm text-slate-400">Instructor: {application.decisionNote}</p>}</div>
             : <form className="mt-4 grid gap-4" onSubmit={apply}><label className="font-semibold">Optional note<textarea className="mt-2 min-h-28 w-full rounded-xl border border-white/15 bg-slate-950 px-4 py-3" maxLength={1000} value={note} onChange={(event) => setNote(event.target.value)} /></label><button className="min-h-12 rounded-xl bg-cyan-400 px-5 font-bold text-slate-950" type="submit">Apply to this project</button></form>}
-          {message && <p className="mt-4 text-emerald-300" role="status">{message}</p>}
         </section>}
       </article>}
     </main>

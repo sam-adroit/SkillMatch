@@ -5,6 +5,8 @@ namespace SkillMatchBE.DTOs.Profiles;
 
 public sealed record StudentProfileResponse(
     Guid UserId,
+    string FirstName,
+    string LastName,
     string Email,
     string ExperienceLevel,
     string Goals,

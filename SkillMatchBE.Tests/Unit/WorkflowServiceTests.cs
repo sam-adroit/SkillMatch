@@ -91,6 +91,7 @@ public sealed class WorkflowServiceTests
         Assert.Equal("Rejected", response.Status);
         Assert.Equal("Capacity was reached", response.DecisionNote);
         Assert.Equal(FixedNow, response.DecidedAt);
+        Assert.Equal("Test Student", response.StudentName);
     }
 
     [Fact]
@@ -136,6 +137,8 @@ public sealed class WorkflowServiceTests
         Assert.Equal(WorkflowFailure.None, result.Failure);
         Assert.Equal(2, result.Value?.Members.Count);
         Assert.Single(result.Value!.Members, member => member.IsLeader);
+        Assert.Contains(result.Value.Members, member => member.Name == "Test Student");
+        Assert.Contains(result.Value.Members, member => member.Name == "Other Student");
     }
 
     private static readonly Guid StudentId = Guid.Parse("c11387aa-8129-4f37-9841-0713177c1d39");
@@ -170,6 +173,8 @@ public sealed class WorkflowServiceTests
 
         public static ApplicationUser User(Guid id) => new()
         {
+            FirstName = id == StudentId ? "Test" : "Other",
+            LastName = "Student",
             Id = id, Email = $"{id:N}@example.edu", NormalizedEmail = $"{id:N}@EXAMPLE.EDU",
             PasswordHash = "unused", CreatedAt = FixedNow
         };
